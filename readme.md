@@ -1,1 +1,1 @@
-# HYEJIN IS THE BEST :D
+# Kubernetes Scheduler Simulator
