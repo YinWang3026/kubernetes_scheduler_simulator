@@ -64,6 +64,7 @@ class PodList:
         s = "Pod List:\n"
         for i in self.pods:
             s += "\t" + i.__repr__() + "\n"
+        return s
 
 class Node:
     def __init__(self, name: str, cpu: int, gpu: int, ram: int) -> None:
@@ -156,7 +157,7 @@ class Event:
         self.transition = trans # Transition enum
     
     def __repr__(self) -> str:
-        return "ID: %d, TimeStamp: %d, Pod:%s, Transition: %s" % (self.id, self.timeStamp, self.pod.name, self.transition.name)
+        return "ID: %d, TimeStamp: %d, Pod: %s, Transition: %s" % (self.id, self.timeStamp, self.pod.name, self.transition.name)
     
 class EventQueue:
     def __init__(self) -> None:
@@ -203,134 +204,120 @@ class EventQueue:
         return s
 
 class Scheduler:
-    def __init__(self, quantum=10000, prio=4) -> None:
-        # Quantum, prio are not used for FCFS, SRTF, SRF, Lottery, just placeholders for future
+    def __init__(self, nodeList: NodeList, quantum: int = 10000, prio: int = 4) -> None:
         self.quantum = quantum
         self.maxprio = prio
-        self.queue = deque()
+        self.nodeList = nodeList
+
+        self.podQueue = deque()
     
-    def getProcess(self) -> Process:
-        if len(self.queue) == 0:
-            return None
-        return self.queue.popleft()
-    
+    def addPod(self, pod: Pod) -> None:
+        print("Derived class please implement")
+
+    def schedulePod(self):
+        print("Derived class please implement")
+        
     def getQuantum(self) -> int:
         return self.quantum
     
-    def printQueue(self) -> None:
-        print("SchedQ[%d]:" % (len(self.queue)))
-        s = ""
-        for i in range(0,len(self.queue)):
-            s += self.queue[i].name + " "
-        print(s)
+    def getMaxprio(self) -> int:
+        return self.maxprio
+    
+    def getPodQueueStr(self) -> str:
+        s = "SchedQ[%d]:" % (len(self.podQueue))
+        for i in self.podQueue:
+            s += i.name + " "
+        return s
+    
+    def __repr__(self) -> str:
+        return "Quantum: %d, Maxprio: %d" % (self.quantum, self.maxprio)
         
 class FCFS(Scheduler): # First Come First Served
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, nodeList: NodeList) -> None:
+        super().__init__(nodeList=nodeList)
 
-    def addProcess(self, process) -> None:
-        self.queue.append(process)
+    def addPod(self, pod: Pod) -> None:
+        pass
+
+    def schedulePod(self):
+        # Not sure how this going to work yet
+        pass
 
     def __repr__(self) -> str:
-        return "FCFS"
+        return "FCFS " + super().__repr__()
     
-class SRTF(Scheduler): # Shortest Remaning Time First
-    def __init__(self) -> None:
-        super().__init__()
+# class SRTF(Scheduler): # Shortest Remaning Time First
+#     def __init__(self) -> None:
+#         super().__init__()
 
-    def addProcess(self, process) -> None:
-        index = 0
-        while index < len(self.queue):
-            if process.work < self.queue[index].work:
-                break
-            index += 1
-        self.queue.insert(index, process)
+#     def addPod(self, pod: Pod) -> None:
+#         pass
 
-    def __repr__(self) -> str:
-        return "SRTF"
+#     def __repr__(self) -> str:
+#         return "SRTF"
 
-class SRF(Scheduler): # Smallest Resource First
-    def __init__(self) -> None:
-        self.queue = deque()
+# class SRF(Scheduler): # Smallest Resource First
+#     def __init__(self) -> None:
+#         self.queue = deque()
 
-    def addProcess(self, process) -> None:
-        index = 0
-        while index < len(self.queue):
-            if process.resource < self.queue[index].resource:
-                break
-            index += 1
-        self.queue.insert(index, process)
+#     def addPod(self, pod: Pod) -> None:
+#         pass
 
-    def __repr__(self) -> str:
-        return "SRF"
+#     def __repr__(self) -> str:
+#         return "SRF"
 
-class Lottery(Scheduler): # Random
-    def __init__(self) -> None:
-        self.queue = deque()
+# class Lottery(Scheduler): # Random
+#     def __init__(self) -> None:
+#         self.queue = deque()
 
-    def addProcess(self, process) -> None:
-        self.queue.append(process)
-
-    def getProcess(self) -> Process:
-        # Overriding parent method
-        if len(self.queue) == 0:
-            return None
-
-        totalTickets = 0
-        for i in range(0, len(self.queue)):
-            totalTickets += self.queue[i].tickets
-        winningTicket = randint(1, totalTickets) # Gotta have at least 1 ticket
-        winner = None
-        currTotal = 0
-        for i in range(0, len(self.queue)):
-            currTotal += self.queue[i].tickets
-            if currTotal >= winningTicket:
-                winner = self.queue[i]
-                break
-        
-        if winner == None:
-            print("No winner in lottery, something gone real bad")
-            sys.exit(1)
-        
-        if tFlag:
-            print("Winner: %s" % (winner.name))
-        self.queue.remove(winner)
-        return winner
+#     def addPod(self, pod: Pod) -> None:
+#         pass
                 
-    def __repr__(self) -> str:
-        return "Lottery"
+#     def __repr__(self) -> str:
+#         return "Lottery"
+
+def userCallHelper():
+    print('simulator.py -h -v -t -q -p <pods.txt> -n <nodes.txt> -s <scheduler> -d <node scheduler>')
+    print('-p or --pfile for pod file')
+    print('-n or --nfile for node file')
+    print('-s or --sched for pod scheduler')
+    print('-d or --nsched for node scheduler')
+    print('-v for general debugging info')
+    print('-q for printing scheduler queue')
+    print('-t for showing simulation traces')
 
 def main(argv):
-    ifile = ''
-    scheduler = None
+    pfile = ''
+    nfile = ''
+    myScheduler = None
+    myNodeList = NodeList()
+    myPodList = PodList()
+    myEventQueue = EventQueue()
+    
     try:
-        opts, args = getopt.getopt(argv,"hvtqi:s:",["help, ifile=, sched="])
+        opts, args = getopt.getopt(argv,"hvtqp:n:s:d:",["help, pfile=, nfile=, sched=, nsched="])
         # getopt.getopt(args, options, [long_options])
         # ":" indicates that an argument is needed, otherwise just an option, like -h
     except getopt.GetoptError:
-        print('simulator.py -h -v -t -q -i <jobs.txt> -s <scheduler>')
-        print('-v for general debugging info')
-        print('-q for printing scheduler queue')
-        print('-t for showing simulation traces')
+        userCallHelper()
         sys.exit(1)
     for opt, arg in opts:
         if opt in ("-h", "--help"):
-            print('simulator.py -h -v -t -q -i <jobs.txt> -s <scheduler>')
-            print('-v for general debugging info')
-            print('-q for printing scheduler queue')
-            print('-t for showing simulation traces')
+            userCallHelper()
             sys.exit()
-        elif opt in ("-i", "--ifile"):
-            ifile = arg
+        elif opt in ("-p", "--pfile"):
+            pfile = arg
+        elif opt in ("-n", "--nfile"):
+            nfile = arg
         elif opt in ("-s", "--sched"):
             if arg == "FCFS":
-                scheduler = FCFS()
-            elif arg == "SRTF":
-                scheduler = SRTF()
-            elif arg == "SRF":
-                scheduler = SRF()
-            elif arg == "Lottery":
-                scheduler = Lottery()
+                myScheduler = FCFS(nodeList = myNodeList)
+            # elif arg == "SRTF":
+            #     myScheduler = SRTF()
+            # elif arg == "SRF":
+            #     myScheduler = SRF()
+            # elif arg == "Lottery":
+            #     myScheduler = Lottery()
         elif opt in ("-v"):
             global vFlag
             vFlag = True
@@ -341,17 +328,19 @@ def main(argv):
             global qFlag
             qFlag = True
     
-    if ifile == "":
-        print('Missing input file, exiting')
+    if pfile == "":
+        print('Missing pod file, exiting')
         sys.exit()
     
-    if scheduler == None:
+    if nfile == "":
+        print('Missing node file, exiting')
+        sys.exit()
+    
+    if myScheduler == None:
         print('Missing scheduler or used invalid name')
         sys.exit()
 
-    myProcessList = []
-    myEventQueue = EventQueue()
-    with open(ifile, 'r') as f:
+    with open(pfile, 'r') as f:
         header = f.readline().strip()
         if vFlag:
             print("Header: " + header)
@@ -360,29 +349,36 @@ def main(argv):
             name = line[0]
             arrivalTime = int(line[1])
             work = int(line[2])
-            tickets = int(line[3])
-            resource = int(line[4])
-            p = Process(name, arrivalTime, work, tickets, resource, State.CREATED)
-            e = Event(arrivalTime, p, Transition.TO_READY)
-            myProcessList.append(p)
-            myEventQueue.putEvent(e)
+            prio = int(line[3])
+            tickets = int(line[4])
+            cpu = int(line[5])
+            gpu = int(line[6])
+            ram = int(line[7])
+
+            p = Pod(name, arrivalTime, work, cpu, gpu, ram, prio, tickets, State.CREATED)
+            myPodList.addPod(p)
+            myEventQueue.putEvent(Event(arrivalTime, p, Transition.TO_WAIT))
+ 
+    with open(nfile, 'r') as f:
+        header = f.readline().strip()
+        if vFlag:
+            print("Header: " + header)
+        for line in f.readlines():
+            line = line.strip().split()
+            name = line[0]
+            cpu = int(line[1])
+            gpu = int(line[2])
+            ram = int(line[3])
+
+            myNodeList.addNode(Node(name, cpu, gpu, ram))
     
     if vFlag:
-        print("Inital loadout")
-        for i in range(0, len(myProcessList)):
-            print(myProcessList[i])
-        myEventQueue.printQueue()
+        print(myPodList)
+        print(myEventQueue)
 
     # Start simulation
-    simulate(myEventQueue, scheduler)
+    # simulate(myEventQueue, scheduler)
 
-    # Calculate JCT
-    print("Results")
-    totalJct = 0
-    for i in range(0, len(myProcessList)):
-        totalJct += myProcessList[i].jct
-        print(myProcessList[i])
-    print("Scheduler: %s, Average JCT: %.2f" % (scheduler, float(totalJct)/float(len(myProcessList))))
     
 def simulate(myEventQueue, myScheduler) -> None:
     def printStateIntro(currentTime, proc, timeInPrevState, newState):
