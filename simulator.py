@@ -4,62 +4,95 @@ from random import randint
 import sys, getopt
 
 # Global variables
-process_id = 0
 vFlag = False # General debug info
 tFlag = False # Prints simulation trace
 qFlag = False # Prints scheduler q
 
+# Pod has 3 states - Waiting Running and Terminated
 class State(Enum):
     CREATED =  auto()
-    READY = auto()
+    WAIT = auto() # Aka the waiting state
     RUN = auto()
-    BLOCKED = auto()
-    DONE = auto()
+    TERM = auto() # The done state
 
 class Transition(Enum):
-    TO_RUN = auto()
-    TO_READY = auto()
-    TO_BLOCK = auto()
-    TO_PREEMPT = auto()
-    TO_DONE = auto()
+    TO_RUN = auto() 
+    TO_WAIT = auto() # To waiting state
+    TO_PREEMPT = auto() # Running to waiting
+    TO_TERM = auto() # Termination
 
-class Process:
-    def __init__(self, name, arrivalTime, work, tickets, resource, state) -> None:
-        global process_id
-        self.id = process_id
-        process_id += 1
-
+class Pod:
+    def __init__(self, name: str, arrivalTime: int, work: int, cpu: int, gpu: int, ram: int, prio: int, tickets: int, state: State) -> None:
+        # Basic info - DOES NOT CHANGE
         self.name = name
-        self.arrivalTime = arrivalTime
-
-        # Calculate these values
-        self.execStartTime = 0
-        self.finishTime = 0
-        self.waitTime = 0 # Time in ready state
-        self.jct = 0.00
-
-        self.resource = resource
-        self.work = work # Execution time
+        self.at = arrivalTime
+        self.work = work
+        self.cpu = cpu
+        self.gpu = gpu
+        self.ram = ram
+        self.prio = prio
         self.tickets = tickets
 
-        self.state = state # State enum
-        self.stateTS = arrivalTime # Time that process became this state
-    
-    def setJct(self) -> None:
-        self.jct = (float(self.waitTime) + float(self.work)) / float(self.work)
-  
-    def __repr__(self) -> str:
-        return "Name: %s, AT: %d, Work: %d, Tickets: %d, Resource: %d, ExecStartTime: %d, FinishTime: %d, WaitTime: %d, JCT: %.2f" \
-            % (self.name, self.arrivalTime, self.work, self.tickets, self.resource, self.execStartTime, self.finishTime, self.waitTime, self.jct)
+        # State information
+        self.state = state # Current state
+        self.stateTS = arrivalTime # Time that entered current state
 
+        # Benchmarking values
+        self.execStartTime = 0
+        self.finishTime = 0
+        self.totalWaitTime = 0
+    
+    def __repr__(self) -> str:
+        return "Name: %s, AT: %d, Work: %d, CPU: %d, GPU: %d, RAM: %d, PRIO: %d, Tickets: %d" \
+            % (self.name, self.at, self.work, self.cpu, self.gpu, self.ram, self.prio, self.tickets)
+    
+    def reprStateInfo(self) -> str:
+        return "State: %s, StateTS: %d" % (self.state.name, self.stateTS)
+    
+    def reprBenchmark(self) -> str:
+        return "ExecStartTime: %d, FinishTime: %d, TotalWaitTime: %d" \
+            % (self.execStartTime, self.finishTime, self.totalWaitTime)
+
+class Node:
+    def __init__(self, name: str, cpu: int, gpu: int, ram: int) -> None:
+        # Basic info - DOES NOT CHANGE
+        self.name = name
+        self.cpu = cpu
+        self.gpu = gpu
+        self.ram = ram
+
+        # Pods running on this node
+        self.podSet = set() # For O(1) remove and add
+    
+    def addPod(self, pod: Pod) -> None:
+        self.podSet.add(pod)
+
+    def removePod(self, pod: Pod) -> None:
+        self.podSet.discard(pod)
+    
+    def __repr__(self) -> str:
+        return "Name: %s, CPU: %d, GPU: %d, RAM: %d" \
+            % (self.name, self.cpu, self.gpu, self.ram)
+    
+    def reprPodList(self) -> str:
+        s = "Node[%s] Pod List:\n" % (self.name)
+        for pod in self.podSet:
+            s += "\t" + pod.name + "\n"
+        return s
+
+eventID = 0 # Global event ID tracker
 class Event:
-    def __init__(self, ts, proc, trans) -> None:
+    def __init__(self, ts: int, pod: Pod, trans: Transition) -> None:
+        global eventID
+        self.id = eventID
+        eventID += 1
+
         self.timeStamp = ts
-        self.process = proc
+        self.pod = pod
         self.transition = trans # Transition enum
     
     def __repr__(self) -> str:
-        return "TimeStamp: %d, Process:%s, Transition: %s" % (self.timeStamp, self.process.name, self.transition.name)
+        return "ID: %d, TimeStamp: %d, Pod:%s, Transition: %s" % (self.id, self.timeStamp, self.pod.name, self.transition.name)
     
 class EventQueue:
     def __init__(self) -> None:
@@ -71,7 +104,7 @@ class EventQueue:
 
         return self.queue.popleft()
     
-    def putEvent(self, evt) -> None:
+    def putEvent(self, evt: Event) -> None:
         index = 0
         while index < len(self.queue):
             if evt.timeStamp < self.queue[index].timeStamp:
@@ -85,10 +118,25 @@ class EventQueue:
         
         return self.queue[0].timeStamp
     
-    def printQueue(self) -> None:
-        for i in range(0,len(self.queue)):
-            print(self.queue[i])
+    def removeEvent(self, evt: Event) -> None:
+        for i in range(0, len(self.queue)):
+            if self.queue[i].id == evt.id:
+                break
 
+        del self.queue[i]
+
+    def getEventByPod(self, pod: Pod) -> int:
+        for i in range(0, len(self.queue)):
+            if self.queue[i].pod.name == pod.name:
+                return i
+        
+        return None
+    
+    def __repr__(self) -> str:
+        s = "Event Queue:\n"
+        for i in self.queue:
+            s += "\t" + i.__repr__() + "\n"
+        return s
 
 class Scheduler:
     def __init__(self, quantum=10000, prio=4) -> None:
