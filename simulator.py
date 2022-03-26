@@ -213,11 +213,16 @@ class Scheduler:
         self.podQueue = deque()
     
     def addPod(self, pod: Pod) -> None:
-        print("Derived class please implement")
+        print("Derived class please implement addPod()")
+        exit(1)
 
-    def schedulePod(self):
-        print("Derived class please implement")
-        
+    def schedulePods(self, nodeList: NodeList) -> list[Pod]:
+        print("Derived class please implement schedulePod()")
+        exit(1)
+    
+    def getQueueLength(self) -> int:
+        return len(self.podQueue)
+
     def getQuantum(self) -> int:
         return self.quantum
     
@@ -240,7 +245,7 @@ class FCFS(Scheduler): # First Come First Served
     def addPod(self, pod: Pod) -> None:
         pass
 
-    def schedulePod(self, nodeList: NodeList):
+    def schedulePods(self, nodeList: NodeList) -> list[Pod]:
         # Not sure how this going to work yet
         pass
 
@@ -389,71 +394,64 @@ def simulate(myEventQueue: EventQueue, myScheduler: Scheduler, myNodeList: NodeL
                 % (currentTime, proc.name, timeInPrevState, proc.state, newState))
 
     event = myEventQueue.getEvent()
-    runningProc = None
-    callScheduler = False
+    # No running proc or call scheduler, because scheduler should always run if there is a pod to be scheduled
+    # runningProc = None
+    # callScheduler = False
 
-    while (event != None):
-        proc = event.process
+    # If there are events, or there is still pod to be scheduled, then this simulator needs to continue running
+    while (event != None or myScheduler.getQueueLength() > 0):
+        pod = event.pod
         eventTrans = event.transition
         currentTime = event.timeStamp
-        timeInPrevState = currentTime - proc.stateTS
+        timeInPrevState = currentTime - pod.stateTS
         event = None # Disconnect pointer to object
 
         # Process events
-        if eventTrans == Transition.TO_READY:
-            printStateIntro(currentTime, proc, timeInPrevState, State.READY.name)
+        if eventTrans == Transition.TO_WAIT:
+            printStateIntro(currentTime, pod, timeInPrevState, State.WAIT.name)
             # Update state info
-            proc.state = State.READY
-            proc.stateTS = currentTime
+            pod.state = State.WAIT
+            pod.stateTS = currentTime
             # Add to scheduler
-            myScheduler.addProcess(proc)
-            callScheduler = True
+            myScheduler.addPod(pod)
 
         elif eventTrans == Transition.TO_RUN:
-            printStateIntro(currentTime, proc, timeInPrevState, State.RUN.name)
+            printStateIntro(currentTime, pod, timeInPrevState, State.RUN.name)
             # Update state info
-            proc.state = State.RUN
-            proc.stateTS = currentTime
-            proc.execStartTime = currentTime
-            proc.waitTime += timeInPrevState
+            pod.state = State.RUN
+            pod.stateTS = currentTime
+            pod.execStartTime = currentTime
+            pod.waitTime += timeInPrevState
             # Create new event to fire off when proc is done, put the proc to DONE
-            myEventQueue.putEvent(Event(currentTime+proc.work, proc, Transition.TO_DONE))
+            myEventQueue.putEvent(Event(currentTime+pod.work, pod, Transition.TO_DONE))
 
-        elif eventTrans == Transition.TO_BLOCK:
-            # No blocking in this simulation :)
-            pass
+        # No blocking in this simulation :)
+        # elif eventTrans == Transition.TO_BLOCK:
+            # pass
 
         elif eventTrans == Transition.TO_PREEMPT:
-            # No preemption in FCFS SRTF SRF LOTTERY
+            # No preemption in FCFS, Pod runs till the end
             pass
 
-        elif eventTrans == Transition.TO_DONE:
-            printStateIntro(currentTime, proc, timeInPrevState, State.DONE.name)
+        elif eventTrans == Transition.TO_TERM:
+            printStateIntro(currentTime, pod, timeInPrevState, State.TERM.name)
             # Update proc info
-            proc.state = State.DONE
-            proc.stateTS = currentTime
-            proc.finishTime = currentTime
-            proc.setJct() # Calculate the jct
-            # Call scheduler for a new proc to run
-            callScheduler = True
-            runningProc = None
+            pod.state = State.TERM
+            pod.stateTS = currentTime
+            pod.finishTime = currentTime
         
         # Get next process
         # If another event of same time, process the next event before calling scheduler
-        if callScheduler and myEventQueue.getNextEvtTime() != currentTime:
-            # Reset the flag
-            callScheduler = False
-            # No proc running
-            if runningProc == None:
-                if qFlag:
-                    myScheduler.printQueue()
+        if myScheduler.getQueueLength() > 0 and myEventQueue.getNextEvtTime() != currentTime:
+            if qFlag:
+                print(myScheduler.getPodQueueStr())
 
-                runningProc = myScheduler.getProcess()
-                if runningProc != None:
-                    # There is a process to run, create a new event
-                    myEventQueue.putEvent(Event(currentTime, runningProc, Transition.TO_RUN))
+            scheduledPods = myScheduler.schedulePods(myNodeList)
+            for p in scheduledPods:
+                # There is a pod to run, create a new event
+                myEventQueue.putEvent(Event(currentTime, p, Transition.TO_RUN))
 
-        # Get next event
+        # Get the next event
         event = myEventQueue.getEvent()
 
 if __name__ == "__main__":
