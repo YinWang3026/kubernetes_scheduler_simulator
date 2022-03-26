@@ -134,7 +134,9 @@ class NodeList:
         s = "Node List:\n"
         for i in self.nodes:
             s += "\t" + i.__repr__() + "\n"
+        return s
 
+# Custom getMatch policies
 class NodeListSecretPolicy(NodeList):
     def __init__(self) -> None:
         super().__init__()
@@ -204,10 +206,9 @@ class EventQueue:
         return s
 
 class Scheduler:
-    def __init__(self, nodeList: NodeList, quantum: int = 10000, prio: int = 4) -> None:
+    def __init__(self, quantum: int = 10000, prio: int = 4) -> None:
         self.quantum = quantum
         self.maxprio = prio
-        self.nodeList = nodeList
 
         self.podQueue = deque()
     
@@ -233,18 +234,18 @@ class Scheduler:
         return "Quantum: %d, Maxprio: %d" % (self.quantum, self.maxprio)
         
 class FCFS(Scheduler): # First Come First Served
-    def __init__(self, nodeList: NodeList) -> None:
-        super().__init__(nodeList=nodeList)
+    def __init__(self) -> None:
+        super().__init__()
 
     def addPod(self, pod: Pod) -> None:
         pass
 
-    def schedulePod(self):
+    def schedulePod(self, nodeList: NodeList):
         # Not sure how this going to work yet
         pass
 
     def __repr__(self) -> str:
-        return "FCFS " + super().__repr__()
+        return "Scheduler: FCFS " + super().__repr__()
     
 # class SRTF(Scheduler): # Shortest Remaning Time First
 #     def __init__(self) -> None:
@@ -311,7 +312,7 @@ def main(argv):
             nfile = arg
         elif opt in ("-s", "--sched"):
             if arg == "FCFS":
-                myScheduler = FCFS(nodeList = myNodeList)
+                myScheduler = FCFS()
             # elif arg == "SRTF":
             #     myScheduler = SRTF()
             # elif arg == "SRF":
@@ -374,13 +375,14 @@ def main(argv):
     
     if vFlag:
         print(myPodList)
+        print(myNodeList)
         print(myEventQueue)
+        print(myScheduler)
 
     # Start simulation
-    # simulate(myEventQueue, scheduler)
-
+    simulate(myEventQueue, myScheduler, myNodeList)
     
-def simulate(myEventQueue, myScheduler) -> None:
+def simulate(myEventQueue: EventQueue, myScheduler: Scheduler, myNodeList: NodeList) -> None:
     def printStateIntro(currentTime, proc, timeInPrevState, newState):
         if tFlag:
             print("currentTime: %d, procName: %s, timeInPrevState: %d, from: %s to: %s" \
