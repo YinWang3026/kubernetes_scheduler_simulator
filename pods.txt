@@ -1,0 +1,6 @@
+podName arrivalTime work prio tickets cpu gpu ram
+PodA 0 452 2 95 12 21 60
+PodB 5 644 4 65 8 16 69
+PodC 5 671 4 86 8 4 21
+PodD 5 580 1 76 7 27 62
+PodE 10 545 2 46 5 18 103
