@@ -296,6 +296,8 @@ class FCFS(Scheduler): # First Come First Served
                 scheduledPods.append(currPod)
             else:
                 # No node can run this pod, we just wait and try schedule this pod again later
+                if tFlag:
+                    print("Unable to Match Pod [%s] with Nodes" % (currPod.name))
                 break
 
         return scheduledPods
@@ -448,18 +450,18 @@ def simulate(myEventQueue: EventQueue, myScheduler: Scheduler, myNodeList: NodeL
                 % (currentTime, proc.name, timeInPrevState, proc.state, newState))
 
     event = myEventQueue.getEvent()
-    # No running proc or call scheduler, because scheduler should always run if there is a pod to be scheduled
-    # runningProc = None
-    # callScheduler = False
 
-    # If there are events, or there is still pod to be scheduled, then this simulator needs to continue running
-    while (event != None or myScheduler.getQueueLength() > 0):
-        if event != None:
-            pod = event.pod
-            eventTrans = event.transition
-            currentTime = event.timeStamp
-            timeInPrevState = currentTime - pod.stateTS
-            event = None # Disconnect pointer to object
+    if tFlag:
+        print("\n###################\nSimulation Start")
+
+    # If there are events, then this simulator needs to continue running
+    # Whether or not there are pods in the queue does not matter
+    while (event != None):
+        pod = event.pod
+        eventTrans = event.transition
+        currentTime = event.timeStamp
+        timeInPrevState = currentTime - pod.stateTS
+        event = None # Disconnect pointer to object
 
         # Process events
         if eventTrans == Transition.TO_WAIT:
@@ -501,7 +503,9 @@ def simulate(myEventQueue: EventQueue, myScheduler: Scheduler, myNodeList: NodeL
         
         # Get next process
         # If another event of same time, process the next event before calling scheduler
-        if myScheduler.getQueueLength() > 0 and myEventQueue.getNextEvtTime() != currentTime:
+        # If there are pods in the sched q and cannot be sched, then no point of running loop, exit
+        # As long as a event happened, try to schedule some pods
+        if myEventQueue.getNextEvtTime() != currentTime:
             if qFlag:
                 print(myScheduler.getPodQueueStr())
 
@@ -512,6 +516,9 @@ def simulate(myEventQueue: EventQueue, myScheduler: Scheduler, myNodeList: NodeL
 
         # Get the next event
         event = myEventQueue.getEvent()
+    
+    if tFlag:
+        print("\nSimulation End\nPods unable to schedule: %s\n###################\n" % (myScheduler.getPodQueueStr()))
 
 if __name__ == "__main__":
    main(sys.argv[1:])
