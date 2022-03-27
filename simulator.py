@@ -98,15 +98,15 @@ class Node:
         self.curCpu -= pod.cpu
         if self.curCpu < 0:
             print("Node %s CPU went negative" % (self.name))
-            exit(1)
+            sys.exit(1)
         self.curGpu -= pod.gpu
         if self.curGpu < 0:
             print("Node %s GPU went negative" % (self.name))
-            exit(1)
+            sys.exit(1)
         self.curRam -= pod.ram
         if self.curRam < 0:
             print("Node %s RAM went negative" % (self.name))
-            exit(1)
+            sys.exit(1)
 
         self.podSet.add(pod)
         if tFlag:
@@ -246,11 +246,11 @@ class Scheduler:
     
     def addPod(self, pod: Pod) -> None:
         print("Derived class please implement addPod()")
-        exit(1)
+        sys.exit(1)
 
     def schedulePods(self, nodeList: NodeList) -> list[Pod]:
         print("Derived class please implement schedulePod()")
-        exit(1)
+        sys.exit(1)
     
     def getQueueLength(self) -> int:
         return len(self.podQueue)
@@ -387,15 +387,15 @@ def main(argv):
     
     if pfile == "":
         print('Missing pod file, exiting')
-        sys.exit()
+        sys.exit(1)
     
     if nfile == "":
         print('Missing node file, exiting')
-        sys.exit()
+        sys.exit(1)
     
     if myScheduler == None:
         print('Missing scheduler or used invalid name')
-        sys.exit()
+        sys.exit(1)
 
     with open(pfile, 'r') as f:
         header = f.readline().strip()

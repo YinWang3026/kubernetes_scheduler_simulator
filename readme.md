@@ -1,6 +1,27 @@
 # Kubernetes Scheduler Simulator
 
-## Sample trace of current setup
+## Basic Information
+
+1. nodes.txt contains a list of randomly generated nodes
+2. pods.txt contains a list of randomly generated pods
+3. pod_gen.py generates pods.txt
+4. node_gen.py generates nodes.txt
+5. Running the simulator
+
+- `py simulator.py -h -v -t -q -p <pods.txt> -n <nodes.txt> -s <scheduler> -d <node scheduler>`
+  - -p or --pfile for pod file
+    - Required arg
+  - -n or --nfile for node file
+    - Required arg
+  - -s or --sched for pod scheduler
+    - Required arg
+  - -d or --nsched for node scheduler
+    - Not implemented yet
+  - -v for general debugging info
+  - -q for printing scheduler queue
+  - -t for showing simulation traces
+
+## Sample Trace of Current Setup
 
 ```Trace
 Header: podName arrivalTime work prio tickets cpu gpu ram
