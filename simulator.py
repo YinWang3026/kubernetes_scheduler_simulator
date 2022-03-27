@@ -49,10 +49,10 @@ class Pod:
         return "Name: %s, AT: %d, Work: %d, CPU: %d, GPU: %d, RAM: %d, PRIO: %d, Tickets: %d" \
             % (self.name, self.at, self.work, self.cpu, self.gpu, self.ram, self.prio, self.tickets)
     
-    def reprStateInfo(self) -> str:
+    def getStateInfoStr(self) -> str:
         return "State: %s, StateTS: %d" % (self.state.name, self.stateTS)
     
-    def reprBenchmark(self) -> str:
+    def getBenchmarkStr(self) -> str:
         return "ExecStartTime: %d, FinishTime: %d, TotalWaitTime: %d" \
             % (self.execStartTime, self.finishTime, self.totalWaitTime)
 
@@ -67,6 +67,12 @@ class PodList:
         s = "Pod List:\n"
         for i in self.pods:
             s += "\t" + i.__repr__() + "\n"
+        return s
+    
+    def getPodsBenchmarkStr(self) -> str:
+        s = "Pod List Benchmarks:\n"
+        for i in self.pods:
+            s += "\t" + i.getBenchmarkStr() + "\n"
         return s
 
 class Node:
@@ -109,7 +115,7 @@ class Node:
 
     def removePod(self, pod: Pod) -> None:
         if tFlag:
-            print("Removing Pod [%s] to Node [%s]\n\tCPU: %d, GPU: %d, RAM: %d" \
+            print("Removing Pod [%s] from Node [%s]\n\tCPU: %d, GPU: %d, RAM: %d" \
                 % (pod.name, self.name, self.curCpu, self.curGpu, self.curRam))
         self.curCpu += pod.cpu
         self.curGpu += pod.gpu
@@ -282,7 +288,7 @@ class FCFS(Scheduler): # First Come First Served
                 chosenNode = matchedNodes[0] # There is only one node here lol
 
                 if tFlag:
-                    print("Pod %s matched with Node %s" % (currPod.name, chosenNode.name))
+                    print("Matched Pod [%s] with Node [%s]" % (currPod.name, chosenNode.name))
 
                 chosenNode.addPod(currPod) # Add pod to node
                 currPod.node = chosenNode # Link node to pod
@@ -431,11 +437,14 @@ def main(argv):
 
     # Start simulation
     simulate(myEventQueue, myScheduler, myNodeList)
+
+    if vFlag:
+        print(myPodList.getPodsBenchmarkStr())
     
 def simulate(myEventQueue: EventQueue, myScheduler: Scheduler, myNodeList: NodeList) -> None:
     def printStateIntro(currentTime, proc, timeInPrevState, newState):
         if tFlag:
-            print("currentTime: %d, procName: %s, timeInPrevState: %d, from: %s to: %s" \
+            print("currentTime: %d, podName: %s, timeInPrevState: %d, from: %s to: %s" \
                 % (currentTime, proc.name, timeInPrevState, proc.state, newState))
 
     event = myEventQueue.getEvent()
@@ -454,7 +463,7 @@ def simulate(myEventQueue: EventQueue, myScheduler: Scheduler, myNodeList: NodeL
 
         # Process events
         if eventTrans == Transition.TO_WAIT:
-            printStateIntro(currentTime, pod, timeInPrevState, State.WAIT.name)
+            printStateIntro(currentTime, pod, timeInPrevState, State.WAIT)
             # Update state info
             pod.state = State.WAIT
             pod.stateTS = currentTime
@@ -462,7 +471,7 @@ def simulate(myEventQueue: EventQueue, myScheduler: Scheduler, myNodeList: NodeL
             myScheduler.addPod(pod)
 
         elif eventTrans == Transition.TO_RUN:
-            printStateIntro(currentTime, pod, timeInPrevState, State.RUN.name)
+            printStateIntro(currentTime, pod, timeInPrevState, State.RUN)
             # Update state info
             pod.state = State.RUN
             pod.stateTS = currentTime
@@ -480,7 +489,7 @@ def simulate(myEventQueue: EventQueue, myScheduler: Scheduler, myNodeList: NodeL
             pass
 
         elif eventTrans == Transition.TO_TERM:
-            printStateIntro(currentTime, pod, timeInPrevState, State.TERM.name)
+            printStateIntro(currentTime, pod, timeInPrevState, State.TERM)
             # Update proc info
             pod.state = State.TERM
             pod.stateTS = currentTime

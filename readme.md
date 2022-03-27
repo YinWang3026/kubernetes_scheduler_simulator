@@ -37,54 +37,60 @@ Event Queue:
         ID: 4, TimeStamp: 10, Pod: PodE, Transition: TO_WAIT
 
 Scheduler: FCFS Quantum: 10000, Maxprio: 4
-currentTime: 0, procName: PodA, timeInPrevState: 0, from: State.CREATED to: WAIT
-Pod PodA matched with Node NodeC
+currentTime: 0, podName: PodA, timeInPrevState: 0, from: State.CREATED to: State.WAIT
+Matched Pod [PodA] with Node [NodeC]
 Adding Pod [PodA] to Node [NodeC]
         CPU: 15, GPU: 31, RAM: 97
         CPU: 3, GPU: 10, RAM: 37
-currentTime: 0, procName: PodA, timeInPrevState: 0, from: State.WAIT to: RUN
-currentTime: 5, procName: PodB, timeInPrevState: 0, from: State.CREATED to: WAIT
-currentTime: 5, procName: PodC, timeInPrevState: 0, from: State.CREATED to: WAIT
-currentTime: 5, procName: PodD, timeInPrevState: 0, from: State.CREATED to: WAIT
-Pod PodB matched with Node NodeA
+currentTime: 0, podName: PodA, timeInPrevState: 0, from: State.WAIT to: State.RUN
+currentTime: 5, podName: PodB, timeInPrevState: 0, from: State.CREATED to: State.WAIT
+currentTime: 5, podName: PodC, timeInPrevState: 0, from: State.CREATED to: State.WAIT
+currentTime: 5, podName: PodD, timeInPrevState: 0, from: State.CREATED to: State.WAIT
+Matched Pod [PodB] with Node [NodeA]
 Adding Pod [PodB] to Node [NodeA]
         CPU: 10, GPU: 29, RAM: 94
         CPU: 2, GPU: 13, RAM: 25
-Pod PodC matched with Node NodeB
+Matched Pod [PodC] with Node [NodeB]
 Adding Pod [PodC] to Node [NodeB]
         CPU: 15, GPU: 17, RAM: 70
         CPU: 7, GPU: 13, RAM: 49
-Pod PodD matched with Node NodeG
+Matched Pod [PodD] with Node [NodeG]
 Adding Pod [PodD] to Node [NodeG]
         CPU: 16, GPU: 27, RAM: 120
         CPU: 9, GPU: 0, RAM: 58
-currentTime: 5, procName: PodB, timeInPrevState: 0, from: State.WAIT to: RUN
-currentTime: 5, procName: PodC, timeInPrevState: 0, from: State.WAIT to: RUN
-currentTime: 5, procName: PodD, timeInPrevState: 0, from: State.WAIT to: RUN
-currentTime: 10, procName: PodE, timeInPrevState: 0, from: State.CREATED to: WAIT
-Pod PodE matched with Node NodeJ
+currentTime: 5, podName: PodB, timeInPrevState: 0, from: State.WAIT to: State.RUN
+currentTime: 5, podName: PodC, timeInPrevState: 0, from: State.WAIT to: State.RUN
+currentTime: 5, podName: PodD, timeInPrevState: 0, from: State.WAIT to: State.RUN
+currentTime: 10, podName: PodE, timeInPrevState: 0, from: State.CREATED to: State.WAIT
+Matched Pod [PodE] with Node [NodeJ]
 Adding Pod [PodE] to Node [NodeJ]
         CPU: 13, GPU: 27, RAM: 113
         CPU: 8, GPU: 9, RAM: 10
-currentTime: 10, procName: PodE, timeInPrevState: 0, from: State.WAIT to: RUN
-currentTime: 452, procName: PodA, timeInPrevState: 452, from: State.RUN to: TERM
-Removing Pod [PodA] to Node [NodeC]
+currentTime: 10, podName: PodE, timeInPrevState: 0, from: State.WAIT to: State.RUN
+currentTime: 452, podName: PodA, timeInPrevState: 452, from: State.RUN to: State.TERM
+Removing Pod [PodA] from Node [NodeC]
         CPU: 3, GPU: 10, RAM: 37
         CPU: 15, GPU: 31, RAM: 97
-currentTime: 555, procName: PodE, timeInPrevState: 545, from: State.RUN to: TERM
-Removing Pod [PodE] to Node [NodeJ]
+currentTime: 555, podName: PodE, timeInPrevState: 545, from: State.RUN to: State.TERM
+Removing Pod [PodE] from Node [NodeJ]
         CPU: 8, GPU: 9, RAM: 10
         CPU: 13, GPU: 27, RAM: 113
-currentTime: 585, procName: PodD, timeInPrevState: 580, from: State.RUN to: TERM
-Removing Pod [PodD] to Node [NodeG]
+currentTime: 585, podName: PodD, timeInPrevState: 580, from: State.RUN to: State.TERM
+Removing Pod [PodD] from Node [NodeG]
         CPU: 9, GPU: 0, RAM: 58
         CPU: 16, GPU: 27, RAM: 120
-currentTime: 649, procName: PodB, timeInPrevState: 644, from: State.RUN to: TERM
-Removing Pod [PodB] to Node [NodeA]
+currentTime: 649, podName: PodB, timeInPrevState: 644, from: State.RUN to: State.TERM
+Removing Pod [PodB] from Node [NodeA]
         CPU: 2, GPU: 13, RAM: 25
         CPU: 10, GPU: 29, RAM: 94
-currentTime: 676, procName: PodC, timeInPrevState: 671, from: State.RUN to: TERM
-Removing Pod [PodC] to Node [NodeB]
+currentTime: 676, podName: PodC, timeInPrevState: 671, from: State.RUN to: State.TERM
+Removing Pod [PodC] from Node [NodeB]
         CPU: 7, GPU: 13, RAM: 49
         CPU: 15, GPU: 17, RAM: 70
+Pod List Benchmarks:
+        ExecStartTime: 0, FinishTime: 452, TotalWaitTime: 0
+        ExecStartTime: 5, FinishTime: 649, TotalWaitTime: 0
+        ExecStartTime: 5, FinishTime: 676, TotalWaitTime: 0
+        ExecStartTime: 5, FinishTime: 585, TotalWaitTime: 0
+        ExecStartTime: 10, FinishTime: 555, TotalWaitTime: 0
 ```
