@@ -2,7 +2,7 @@ from random import randint
 from name_generator import iter_all_strings
 
 gen = iter_all_strings()
-N = 76
+N = 15
 outFile = "nodes.txt"
 
 with open(outFile, 'w') as f:
@@ -12,8 +12,8 @@ with open(outFile, 'w') as f:
             f.write("\n")
 
         nodeName = "Node" + next(gen)
-        cpu = randint(1,16)
-        gpu = randint(1,32)
-        ram = randint(1,128)
+        cpu = randint(10,16)
+        gpu = randint(10,32)
+        ram = randint(32,128)
 
         f.write("%s %d %d %d" % (nodeName, cpu, gpu, ram))

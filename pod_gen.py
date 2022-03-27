@@ -3,7 +3,7 @@ from name_generator import iter_all_strings
 
 currentTime = 0
 gen = iter_all_strings()
-N = 52
+N = 5
 outFile = "pods.txt"
 
 with open(outFile, 'w') as f:

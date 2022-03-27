@@ -33,6 +33,9 @@ class Pod:
         self.prio = prio
         self.tickets = tickets
 
+        # Node that I am running on
+        self.node = None
+
         # State information
         self.state = state # Current state
         self.stateTS = arrivalTime # Time that entered current state
@@ -83,6 +86,9 @@ class Node:
         self.podSet = set() # For O(1) remove and add, but can use other data struct if needed
     
     def addPod(self, pod: Pod) -> None:
+        if tFlag:
+            print("Adding Pod [%s] to Node [%s]\n\tCPU: %d, GPU: %d, RAM: %d" \
+                % (pod.name, self.name, self.curCpu, self.curGpu, self.curRam))
         self.curCpu -= pod.cpu
         if self.curCpu < 0:
             print("Node %s CPU went negative" % (self.name))
@@ -95,19 +101,33 @@ class Node:
         if self.curRam < 0:
             print("Node %s RAM went negative" % (self.name))
             exit(1)
+
         self.podSet.add(pod)
+        if tFlag:
+            print("\tCPU: %d, GPU: %d, RAM: %d" \
+                % (self.curCpu, self.curGpu, self.curRam))
 
     def removePod(self, pod: Pod) -> None:
+        if tFlag:
+            print("Removing Pod [%s] to Node [%s]\n\tCPU: %d, GPU: %d, RAM: %d" \
+                % (pod.name, self.name, self.curCpu, self.curGpu, self.curRam))
         self.curCpu += pod.cpu
         self.curGpu += pod.gpu
         self.curRam += pod.ram
         self.podSet.discard(pod)
+        if tFlag:
+            print("\tCPU: %d, GPU: %d, RAM: %d" \
+                % (self.curCpu, self.curGpu, self.curRam))
     
     def __repr__(self) -> str:
         return "Name: %s, CPU: %d, GPU: %d, RAM: %d" \
             % (self.name, self.cpu, self.gpu, self.ram)
+
+    def getCurResourceStr(self) -> str:
+        return "Name: %s, CPU: %d, GPU: %d, RAM: %d" \
+            % (self.name, self.curCpu, self.curGpu, self.curRam)
     
-    def reprPodList(self) -> str:
+    def getPodListStr(self) -> str:
         s = "Node[%s] Pod List: " % (self.name)
         for pod in self.podSet:
             s += pod.name + " "
@@ -120,15 +140,21 @@ class NodeList:
     def addNode(self, node: Node) -> None:
         self.nodes.append(node)
 
-    def getMatch(self, pod: Pod) -> list[Node]:
+    def getMatch(self, pod: Pod, n: int) -> list[Node]:
         # Return a list of nodes that can run the given pod
         # Can use derived class and a custom policy
-        # Default policy, return the first node that has enough resource to run this pod
+        # Default policy, return the first n nodes that has enough resource to run this pod
+        matchedNodes = []
+        count = 0
+
         for i in self.nodes:
             if i.curCpu >= pod.cpu and i.curGpu >= pod.gpu and i.curRam >= pod.ram:
-                return [i]
+                matchedNodes.append(i)
+                count += 1
+                if count == n:
+                    break
         
-        return []
+        return matchedNodes
 
     def __repr__(self) -> str:
         s = "Node List:\n"
@@ -243,11 +269,30 @@ class FCFS(Scheduler): # First Come First Served
         super().__init__()
 
     def addPod(self, pod: Pod) -> None:
-        pass
+        self.podQueue.append(pod)
 
-    def schedulePods(self, nodeList: NodeList) -> list[Pod]:
+    def schedulePods(self, myNodeList: NodeList) -> list[Pod]:
         # Not sure how this going to work yet
-        pass
+        scheduledPods = []
+        while len(self.podQueue) > 0:
+            currPod = self.podQueue[0]
+            matchedNodes = myNodeList.getMatch(currPod, 1)
+            if len(matchedNodes) > 0:
+                # At least one Node can run this pod
+                chosenNode = matchedNodes[0] # There is only one node here lol
+
+                if tFlag:
+                    print("Pod %s matched with Node %s" % (currPod.name, chosenNode.name))
+
+                chosenNode.addPod(currPod) # Add pod to node
+                currPod.node = chosenNode # Link node to pod
+                self.podQueue.popleft() # Remove this pod from queue
+                scheduledPods.append(currPod)
+            else:
+                # No node can run this pod, we just wait and try schedule this pod again later
+                break
+
+        return scheduledPods
 
     def __repr__(self) -> str:
         return "Scheduler: FCFS " + super().__repr__()
@@ -400,11 +445,12 @@ def simulate(myEventQueue: EventQueue, myScheduler: Scheduler, myNodeList: NodeL
 
     # If there are events, or there is still pod to be scheduled, then this simulator needs to continue running
     while (event != None or myScheduler.getQueueLength() > 0):
-        pod = event.pod
-        eventTrans = event.transition
-        currentTime = event.timeStamp
-        timeInPrevState = currentTime - pod.stateTS
-        event = None # Disconnect pointer to object
+        if event != None:
+            pod = event.pod
+            eventTrans = event.transition
+            currentTime = event.timeStamp
+            timeInPrevState = currentTime - pod.stateTS
+            event = None # Disconnect pointer to object
 
         # Process events
         if eventTrans == Transition.TO_WAIT:
@@ -421,9 +467,9 @@ def simulate(myEventQueue: EventQueue, myScheduler: Scheduler, myNodeList: NodeL
             pod.state = State.RUN
             pod.stateTS = currentTime
             pod.execStartTime = currentTime
-            pod.waitTime += timeInPrevState
+            pod.totalWaitTime += timeInPrevState
             # Create new event to fire off when proc is done, put the proc to DONE
-            myEventQueue.putEvent(Event(currentTime+pod.work, pod, Transition.TO_DONE))
+            myEventQueue.putEvent(Event(currentTime+pod.work, pod, Transition.TO_TERM))
 
         # No blocking in this simulation :)
         # elif eventTrans == Transition.TO_BLOCK:
@@ -439,6 +485,10 @@ def simulate(myEventQueue: EventQueue, myScheduler: Scheduler, myNodeList: NodeL
             pod.state = State.TERM
             pod.stateTS = currentTime
             pod.finishTime = currentTime
+            # Return resouce to node
+            node = pod.node
+            pod.node = None
+            node.removePod(pod)
         
         # Get next process
         # If another event of same time, process the next event before calling scheduler
