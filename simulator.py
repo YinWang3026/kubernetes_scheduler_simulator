@@ -117,6 +117,9 @@ def main(argv):
                 myScheduler = SRF()
             # elif arg == "Lottery":
             #     myScheduler = Lottery()
+        elif opt in ("-d", "--nsched="):
+            if arg == "topK":
+                myNodeList = NodeListByDistance()
         elif opt in ("-v"):
             global_.vFlag = True
         elif opt in ("-t"):
@@ -134,6 +137,10 @@ def main(argv):
     
     if myScheduler == None:
         print('Missing scheduler or used invalid name')
+        sys.exit(1)
+    
+    if myNodeList == None:
+        print('Missing node list or used invalid name')
         sys.exit(1)
 
     with open(pfile, 'r') as f:
