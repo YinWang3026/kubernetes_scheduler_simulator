@@ -3,180 +3,17 @@ from enum import Enum, auto
 from random import randint
 import sys, getopt
 
-# Global variables
-vFlag = False # General debug info
-tFlag = False # Prints simulation trace
-qFlag = False # Prints scheduler q
+import global_
+from pods import *
+from nodes import *
+from schedulers import *
 
-# Pod has 3 states - Waiting Running and Terminated
-class State(Enum):
-    CREATED =  auto()
-    WAIT = auto() # Aka the waiting state
-    RUN = auto()
-    TERM = auto() # The done state
 
 class Transition(Enum):
     TO_RUN = auto() 
     TO_WAIT = auto() # To waiting state
     TO_PREEMPT = auto() # Running to waiting
     TO_TERM = auto() # Termination
-
-class Pod:
-    def __init__(self, name: str, arrivalTime: int, work: int, cpu: int, gpu: int, ram: int, prio: int, tickets: int, state: State) -> None:
-        # Basic info - DOES NOT CHANGE
-        self.name = name
-        self.at = arrivalTime
-        self.work = work
-        self.cpu = cpu
-        self.gpu = gpu
-        self.ram = ram
-        self.prio = prio
-        self.tickets = tickets
-
-        # Node that I am running on
-        self.node = None
-
-        # State information
-        self.state = state # Current state
-        self.stateTS = arrivalTime # Time that entered current state
-
-        # Benchmarking values
-        self.execStartTime = 0
-        self.finishTime = 0
-        self.totalWaitTime = 0
-    
-    def __repr__(self) -> str:
-        return "Name: %s, AT: %d, Work: %d, CPU: %d, GPU: %d, RAM: %d, PRIO: %d, Tickets: %d" \
-            % (self.name, self.at, self.work, self.cpu, self.gpu, self.ram, self.prio, self.tickets)
-    
-    def getStateInfoStr(self) -> str:
-        return "State: %s, StateTS: %d" % (self.state.name, self.stateTS)
-    
-    def getBenchmarkStr(self) -> str:
-        return "ExecStartTime: %d, FinishTime: %d, TotalWaitTime: %d" \
-            % (self.execStartTime, self.finishTime, self.totalWaitTime)
-
-class PodList:
-    def __init__(self) -> None:
-        self.pods = []
-
-    def addPod(self, pod: Pod) -> None:
-        self.pods.append(pod)
-
-    def __repr__(self) -> str:
-        s = "Pod List:\n"
-        for i in self.pods:
-            s += "\t" + i.__repr__() + "\n"
-        return s
-    
-    def getPodsBenchmarkStr(self) -> str:
-        s = "Pod List Benchmarks:\n"
-        for i in self.pods:
-            s += "\t" + i.getBenchmarkStr() + "\n"
-        return s
-
-class Node:
-    def __init__(self, name: str, cpu: int, gpu: int, ram: int) -> None:
-        # Basic info - DOES NOT CHANGE
-        self.name = name
-        self.cpu = cpu
-        self.gpu = gpu
-        self.ram = ram
-
-        # Remaining resource
-        self.curCpu = cpu
-        self.curGpu = gpu
-        self.curRam = ram
-
-        # Pods running on this node
-        self.podSet = set() # For O(1) remove and add, but can use other data struct if needed
-    
-    def addPod(self, pod: Pod) -> None:
-        if tFlag:
-            print("Adding Pod [%s] to Node [%s]\n\tCPU: %d, GPU: %d, RAM: %d" \
-                % (pod.name, self.name, self.curCpu, self.curGpu, self.curRam))
-        self.curCpu -= pod.cpu
-        if self.curCpu < 0:
-            print("Node %s CPU went negative" % (self.name))
-            sys.exit(1)
-        self.curGpu -= pod.gpu
-        if self.curGpu < 0:
-            print("Node %s GPU went negative" % (self.name))
-            sys.exit(1)
-        self.curRam -= pod.ram
-        if self.curRam < 0:
-            print("Node %s RAM went negative" % (self.name))
-            sys.exit(1)
-
-        self.podSet.add(pod)
-        if tFlag:
-            print("\tCPU: %d, GPU: %d, RAM: %d" \
-                % (self.curCpu, self.curGpu, self.curRam))
-
-    def removePod(self, pod: Pod) -> None:
-        if tFlag:
-            print("Removing Pod [%s] from Node [%s]\n\tCPU: %d, GPU: %d, RAM: %d" \
-                % (pod.name, self.name, self.curCpu, self.curGpu, self.curRam))
-        self.curCpu += pod.cpu
-        self.curGpu += pod.gpu
-        self.curRam += pod.ram
-        self.podSet.discard(pod)
-        if tFlag:
-            print("\tCPU: %d, GPU: %d, RAM: %d" \
-                % (self.curCpu, self.curGpu, self.curRam))
-    
-    def __repr__(self) -> str:
-        return "Name: %s, CPU: %d, GPU: %d, RAM: %d" \
-            % (self.name, self.cpu, self.gpu, self.ram)
-
-    def getCurResourceStr(self) -> str:
-        return "Name: %s, CPU: %d, GPU: %d, RAM: %d" \
-            % (self.name, self.curCpu, self.curGpu, self.curRam)
-    
-    def getPodListStr(self) -> str:
-        s = "Node[%s] Pod List: " % (self.name)
-        for pod in self.podSet:
-            s += pod.name + " "
-        return s
-
-class NodeList:
-    def __init__(self) -> None:
-        self.nodes = []
-
-    def addNode(self, node: Node) -> None:
-        self.nodes.append(node)
-
-    def getMatch(self, pod: Pod, n: int) -> list[Node]:
-        # Return a list of nodes that can run the given pod
-        # Can use derived class and a custom policy
-        # Default policy, return the first n nodes that has enough resource to run this pod
-        matchedNodes = []
-        count = 0
-
-        for i in self.nodes:
-            if i.curCpu >= pod.cpu and i.curGpu >= pod.gpu and i.curRam >= pod.ram:
-                matchedNodes.append(i)
-                count += 1
-                if count == n:
-                    break
-        
-        return matchedNodes
-
-    def __repr__(self) -> str:
-        s = "Node List:\n"
-        for i in self.nodes:
-            s += "\t" + i.__repr__() + "\n"
-        return s
-
-# Custom getMatch policies
-class NodeListSecretPolicy(NodeList):
-    def __init__(self) -> None:
-        super().__init__()
-    
-    def getMatch(self, pod: Pod) -> list[Node]:
-        # return super().getMatch(pod)
-        # SuPer secret policy
-        pass
 
 
 eventID = 0 # Global event ID tracker
@@ -237,103 +74,6 @@ class EventQueue:
             s += "\t" + i.__repr__() + "\n"
         return s
 
-class Scheduler:
-    def __init__(self, quantum: int = 10000, prio: int = 4) -> None:
-        self.quantum = quantum
-        self.maxprio = prio
-
-        self.podQueue = deque()
-    
-    def addPod(self, pod: Pod) -> None:
-        print("Derived class please implement addPod()")
-        sys.exit(1)
-
-    def schedulePods(self, nodeList: NodeList) -> list[Pod]:
-        print("Derived class please implement schedulePod()")
-        sys.exit(1)
-    
-    def getQueueLength(self) -> int:
-        return len(self.podQueue)
-
-    def getQuantum(self) -> int:
-        return self.quantum
-    
-    def getMaxprio(self) -> int:
-        return self.maxprio
-    
-    def getPodQueueStr(self) -> str:
-        s = "SchedQ[%d]:" % (len(self.podQueue))
-        for i in self.podQueue:
-            s += i.name + " "
-        return s
-    
-    def __repr__(self) -> str:
-        return "Quantum: %d, Maxprio: %d" % (self.quantum, self.maxprio)
-        
-class FCFS(Scheduler): # First Come First Served
-    def __init__(self) -> None:
-        super().__init__()
-
-    def addPod(self, pod: Pod) -> None:
-        self.podQueue.append(pod)
-
-    def schedulePods(self, myNodeList: NodeList) -> list[Pod]:
-        # Not sure how this going to work yet
-        scheduledPods = []
-        while len(self.podQueue) > 0:
-            currPod = self.podQueue[0]
-            matchedNodes = myNodeList.getMatch(currPod, 1)
-            if len(matchedNodes) > 0:
-                # At least one Node can run this pod
-                chosenNode = matchedNodes[0] # There is only one node here lol
-
-                if tFlag:
-                    print("Matched Pod [%s] with Node [%s]" % (currPod.name, chosenNode.name))
-
-                chosenNode.addPod(currPod) # Add pod to node
-                currPod.node = chosenNode # Link node to pod
-                self.podQueue.popleft() # Remove this pod from queue
-                scheduledPods.append(currPod)
-            else:
-                # No node can run this pod, we just wait and try schedule this pod again later
-                if tFlag:
-                    print("Unable to Match Pod [%s] with Nodes" % (currPod.name))
-                break
-
-        return scheduledPods
-
-    def __repr__(self) -> str:
-        return "Scheduler: FCFS " + super().__repr__()
-    
-# class SRTF(Scheduler): # Shortest Remaning Time First
-#     def __init__(self) -> None:
-#         super().__init__()
-
-#     def addPod(self, pod: Pod) -> None:
-#         pass
-
-#     def __repr__(self) -> str:
-#         return "SRTF"
-
-# class SRF(Scheduler): # Smallest Resource First
-#     def __init__(self) -> None:
-#         self.queue = deque()
-
-#     def addPod(self, pod: Pod) -> None:
-#         pass
-
-#     def __repr__(self) -> str:
-#         return "SRF"
-
-# class Lottery(Scheduler): # Random
-#     def __init__(self) -> None:
-#         self.queue = deque()
-
-#     def addPod(self, pod: Pod) -> None:
-#         pass
-                
-#     def __repr__(self) -> str:
-#         return "Lottery"
 
 def userCallHelper():
     print('simulator.py -h -v -t -q -p <pods.txt> -n <nodes.txt> -s <scheduler> -d <node scheduler>')
@@ -352,7 +92,7 @@ def main(argv):
     myNodeList = NodeList()
     myPodList = PodList()
     myEventQueue = EventQueue()
-    
+
     try:
         opts, args = getopt.getopt(argv,"hvtqp:n:s:d:",["help, pfile=, nfile=, sched=, nsched="])
         # getopt.getopt(args, options, [long_options])
@@ -371,21 +111,18 @@ def main(argv):
         elif opt in ("-s", "--sched"):
             if arg == "FCFS":
                 myScheduler = FCFS()
-            # elif arg == "SRTF":
-            #     myScheduler = SRTF()
-            # elif arg == "SRF":
-            #     myScheduler = SRF()
+            elif arg == "SRTF":
+                myScheduler = SRTF()
+            elif arg == "SRF":
+                myScheduler = SRF()
             # elif arg == "Lottery":
             #     myScheduler = Lottery()
         elif opt in ("-v"):
-            global vFlag
-            vFlag = True
+            global_.vFlag = True
         elif opt in ("-t"):
-            global tFlag
-            tFlag = True
+            global_.tFlag = True
         elif opt in ("-q"):
-            global qFlag
-            qFlag = True
+            global_.qFlag = True
     
     if pfile == "":
         print('Missing pod file, exiting')
@@ -401,7 +138,7 @@ def main(argv):
 
     with open(pfile, 'r') as f:
         header = f.readline().strip()
-        if vFlag:
+        if global_.vFlag:
             print("Header: " + header)
         for line in f.readlines():
             line = line.strip().split()
@@ -420,7 +157,7 @@ def main(argv):
  
     with open(nfile, 'r') as f:
         header = f.readline().strip()
-        if vFlag:
+        if global_.vFlag:
             print("Header: " + header)
         for line in f.readlines():
             line = line.strip().split()
@@ -431,7 +168,7 @@ def main(argv):
 
             myNodeList.addNode(Node(name, cpu, gpu, ram))
     
-    if vFlag:
+    if global_.vFlag:
         print(myPodList)
         print(myNodeList)
         print(myEventQueue)
@@ -440,18 +177,18 @@ def main(argv):
     # Start simulation
     simulate(myEventQueue, myScheduler, myNodeList)
 
-    if vFlag:
+    if global_.vFlag:
         print(myPodList.getPodsBenchmarkStr())
     
 def simulate(myEventQueue: EventQueue, myScheduler: Scheduler, myNodeList: NodeList) -> None:
     def printStateIntro(currentTime, proc, timeInPrevState, newState):
-        if tFlag:
+        if global_.tFlag:
             print("currentTime: %d, podName: %s, timeInPrevState: %d, from: %s to: %s" \
                 % (currentTime, proc.name, timeInPrevState, proc.state, newState))
 
     event = myEventQueue.getEvent()
 
-    if tFlag:
+    if global_.tFlag:
         print("\n###################\nSimulation Start")
 
     # If there are events, then this simulator needs to continue running
@@ -506,7 +243,7 @@ def simulate(myEventQueue: EventQueue, myScheduler: Scheduler, myNodeList: NodeL
         # If there are pods in the sched q and cannot be sched, then no point of running loop, exit
         # As long as a event happened, try to schedule some pods
         if myEventQueue.getNextEvtTime() != currentTime:
-            if qFlag:
+            if global_.qFlag:
                 print(myScheduler.getPodQueueStr())
 
             scheduledPods = myScheduler.schedulePods(myNodeList)
@@ -517,7 +254,7 @@ def simulate(myEventQueue: EventQueue, myScheduler: Scheduler, myNodeList: NodeL
         # Get the next event
         event = myEventQueue.getEvent()
     
-    if tFlag:
+    if global_.tFlag:
         print("\nSimulation End\nPods unable to schedule: %s\n###################\n" % (myScheduler.getPodQueueStr()))
 
 if __name__ == "__main__":
