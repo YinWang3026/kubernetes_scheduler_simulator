@@ -186,6 +186,7 @@ def main(argv):
 
     if global_.vFlag:
         print(myPodList.getPodsBenchmarkStr())
+        print(myNodeList.getUsageLogs())
     
 def simulate(myEventQueue: EventQueue, myScheduler: Scheduler, myNodeList: NodeList) -> None:
     def printStateIntro(currentTime, proc, timeInPrevState, newState):
@@ -206,6 +207,7 @@ def simulate(myEventQueue: EventQueue, myScheduler: Scheduler, myNodeList: NodeL
         currentTime = event.timeStamp
         timeInPrevState = currentTime - pod.stateTS
         event = None # Disconnect pointer to object
+        myNodeList.setCurrentTime(currentTime)
 
         # Process events
         if eventTrans == Transition.TO_WAIT:

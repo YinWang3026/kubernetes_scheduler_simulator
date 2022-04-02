@@ -18,13 +18,18 @@ class Node:
         self.curGpu = gpu
         self.curRam = ram
 
-        # Pods running on this node
-        self.podSet = set() # For O(1) remove and add, but can use other data struct if needed
+        # Tracking system usage
+        self.currentTime = 0
+        self.log = [] # Tuple of (start, end, pod.name, cpu, gpu, ram usage)
+        self.admission = {} # Map tracking pod.name starting time on this node 
+
+        # Pods running on this node, not needed as self.admission can be used to track whats current on this Node
+        # self.podSet = set() # For O(1) remove and add, but can use other data struct if needed
     
     def addPod(self, pod: Pod) -> None:
         if global_.tFlag:
-            print("Adding Pod [%s] to Node [%s]\n\tCPU: %d, GPU: %d, RAM: %d" \
-                % (pod.name, self.name, self.curCpu, self.curGpu, self.curRam))
+            print("Time [%d] Adding Pod [%s] to Node [%s]\n\tBefore CPU: %d, GPU: %d, RAM: %d" \
+                % (self.currentTime, pod.name, self.name, self.curCpu, self.curGpu, self.curRam))
         self.curCpu -= pod.cpu
         if self.curCpu < 0:
             print("Node %s CPU went negative" % (self.name))
@@ -38,21 +43,32 @@ class Node:
             print("Node %s RAM went negative" % (self.name))
             exit(1)
 
-        self.podSet.add(pod)
+        self.admission[pod.name] = self.currentTime
         if global_.tFlag:
-            print("\tCPU: %d, GPU: %d, RAM: %d" \
+            print("\tAfter CPU: %d, GPU: %d, RAM: %d" \
                 % (self.curCpu, self.curGpu, self.curRam))
 
     def removePod(self, pod: Pod) -> None:
         if global_.tFlag:
-            print("Removing Pod [%s] from Node [%s]\n\tCPU: %d, GPU: %d, RAM: %d" \
-                % (pod.name, self.name, self.curCpu, self.curGpu, self.curRam))
+            print("Time [%d] Removing Pod [%s] from Node [%s]\n\tBefore CPU: %d, GPU: %d, RAM: %d" \
+                % (self.currentTime, pod.name, self.name, self.curCpu, self.curGpu, self.curRam))
+        
+        if pod.name not in self.admission:
+            print("Removing non-existant pod [%s]" % (pod.name))
+            exit(1)
+
         self.curCpu += pod.cpu
         self.curGpu += pod.gpu
         self.curRam += pod.ram
-        self.podSet.discard(pod)
+
+        # (startTime, endTime, cpu, gpu, ram usage)
+        usage = (self.admission[pod.name], self.currentTime, pod.name, pod.cpu, pod.gpu, pod.ram)
+        self.log.append(usage)
+        
+        del self.admission[pod.name]
+
         if global_.tFlag:
-            print("\tCPU: %d, GPU: %d, RAM: %d" \
+            print("\tAfter CPU: %d, GPU: %d, RAM: %d" \
                 % (self.curCpu, self.curGpu, self.curRam))
     
     def __repr__(self) -> str:
@@ -65,8 +81,14 @@ class Node:
     
     def getPodListStr(self) -> str:
         s = "Node[%s] Pod List: " % (self.name)
-        for pod in self.podSet:
+        for pod in self.admission.values():
             s += pod.name + " "
+        return s
+    
+    def getUsageLogStr(self) -> str:
+        s = "Node[%s] Usage Log: " % (self.name)
+        for i in self.log:
+            s += "\t" + str(i)
         return s
 
 class NodeList:
@@ -75,6 +97,10 @@ class NodeList:
 
     def addNode(self, node: Node) -> None:
         self.nodes.append(node)
+    
+    def setCurrentTime(self, currentTime: int) -> None:
+        for i in self.nodes:
+            i.currentTime = currentTime
 
     def getMatch(self, pod: Pod, k: int) -> list[Node]:
         # Return a list of nodes that can run the given pod
@@ -96,6 +122,12 @@ class NodeList:
         s = "Node List:\n"
         for i in self.nodes:
             s += "\t" + i.__repr__() + "\n"
+        return s
+
+    def getUsageLogs(self) -> str:
+        s = "Usage Log: \n"
+        for i in self.nodes:
+            s += "\t" + i.getUsageLogStr() + "\n"
         return s
 
 # Custom getMatch policies
