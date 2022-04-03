@@ -26,7 +26,7 @@ class Pod:
         # State information
         self.state = state # Current state
         self.stateTS = arrivalTime # Time that entered current state
-        self.remainTime = work # remaining time to finish work
+        self.remainWork = work # remaining time to finish work
 
         # Benchmarking values
         self.execStartTime = 0

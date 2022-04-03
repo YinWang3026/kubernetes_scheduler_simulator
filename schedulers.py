@@ -79,7 +79,7 @@ class SRTF(Scheduler): # Shortest Remaining Time First
     def addPod(self, pod: Pod) -> None: # put smallest usage time 
         addloc = -1
         for i in range(len(self.podQueue)):
-            if pod.remainTime < self.podQueue[i].remainTime:
+            if pod.remainWork < self.podQueue[i].remainWork:
                 self.podQueue.insert(i, pod)
                 addloc = i
                 break
