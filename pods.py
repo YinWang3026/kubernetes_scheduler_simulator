@@ -38,11 +38,11 @@ class Pod:
             % (self.name, self.at, self.work, self.cpu, self.gpu, self.ram, self.prio, self.tickets)
     
     def getStateInfoStr(self) -> str:
-        return "State: %s, StateTS: %d" % (self.state.name, self.stateTS)
+        return "Name: %s, State: %s, StateTS: %d" % (self.name, self.state.name, self.stateTS)
     
     def getBenchmarkStr(self) -> str:
-        return "ExecStartTime: %d, FinishTime: %d, TotalWaitTime: %d" \
-            % (self.execStartTime, self.finishTime, self.totalWaitTime)
+        return "Name: %s, ExecStartTime: %d, FinishTime: %d, TotalWaitTime: %d" \
+            % (self.name, self.execStartTime, self.finishTime, self.totalWaitTime)
 
 class PodList:
     def __init__(self) -> None:

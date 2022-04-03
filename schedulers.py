@@ -1,6 +1,7 @@
 from collections import deque
 from pods import *
 from nodes import *
+from sys import exit
 import global_
 
 class Scheduler:
@@ -11,11 +12,11 @@ class Scheduler:
     
     def addPod(self, pod: Pod) -> None: 
         print("Derived class please implement addPod()")
-        sys.exit(1)
+        exit(1)
 
     def schedulePods(self, nodeList: NodeList) -> list[Pod]:
         print("Derived class please implement schedulePod()")
-        sys.exit(1)
+        exit(1)
     
     def getQueueLength(self) -> int:
         return len(self.podQueue)
