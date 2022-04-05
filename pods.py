@@ -7,6 +7,7 @@ class State(Enum):
     WAIT = auto() # Aka the waiting state
     RUN = auto()
     TERM = auto() # The done state
+    PREEMPT = auto()
 
 class Pod:
     def __init__(self, name: str, arrivalTime: int, work: int, cpu: int, gpu: int, ram: int, prio: int, tickets: int, state: State) -> None:

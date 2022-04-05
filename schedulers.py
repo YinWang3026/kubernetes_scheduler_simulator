@@ -1,6 +1,7 @@
 from collections import deque
 from pods import *
 from nodes import *
+from sys import exit
 import global_
 
 class Scheduler:
@@ -12,11 +13,11 @@ class Scheduler:
     
     def addPod(self, pod: Pod) -> None: 
         print("Derived class please implement addPod()")
-        sys.exit(1)
+        exit(1)
 
     def schedulePods(self, nodeList: NodeList) -> list[Pod]:
         print("Derived class please implement schedulePod()")
-        sys.exit(1)
+        exit(1)
     
     def getQueueLength(self) -> int:
         return len(self.podQueue)
@@ -291,6 +292,16 @@ class PRIO(Scheduler): # Priority scheduling
 #         return "Scheduler: DRF " + super().__repr__()
 
 # class Lottery(Scheduler): # Random
+#     def __init__(self) -> None:
+#         self.queue = deque()
+
+#     def addPod(self, pod: Pod) -> None:
+#         pass
+                
+#     def __repr__(self) -> str:
+#         return "Lottery" + super().__repr__()
+
+# class OurNovelSolution(Scheduler):
 #     def __init__(self) -> None:
 #         self.queue = deque()
 

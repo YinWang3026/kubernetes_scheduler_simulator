@@ -223,39 +223,33 @@ def simulate(myEventQueue: EventQueue, myScheduler: Scheduler, myNodeList: NodeL
             pod.execStartTime = currentTime
             pod.totalWaitTime += timeInPrevState
 
-            if myScheduler.isPreemptive: #if preemptive scheduler, need to update remainTime and do preemption
+            if pod.remainWork > myScheduler.quantum: #Remaining time to run is greater than the quantum
+                pod.remainWork -= myScheduler.quantum
+    
+                # Create new event to preempt the proc after the quantum, put the proc to preempt
+                myEventQueue.putEvent(Event(currentTime+myScheduler.quantum, pod, Transition.TO_PREEMPT))
 
-                if pod.remainWork > myScheduler.quantum: #Remaining time to run is greater than the quantum
-                    pod.remainWork -= myScheduler.quantum
-                    
-                    # Create new event to preempt the proc after the quantum, put the proc to preempt
-                    myEventQueue.putEvent(Event(currentTime+myScheduler.quantum, pod, Transition.TO_PREEMPT))
+            else: #Remaining time to run is smaller than the quantum
+                pod.remainWork -= min(myScheduler.quantum, pod.remainWork)
 
-                else: #Remaining time to run is smaller than the quantum
-                    
-                    # Create new event to fire off when proc is done, put the proc to DONE
-                    myEventQueue.putEvent(Event(currentTime+pod.remainWork, pod, Transition.TO_TERM))
-                    # update the remaining time to zero ()
-                    pod.remainWork = 0
-            else:
                 # Create new event to fire off when proc is done, put the proc to DONE
-                myEventQueue.putEvent(Event(currentTime+pod.work, pod, Transition.TO_TERM))
+                myEventQueue.putEvent(Event(currentTime+pod.remainWork, pod, Transition.TO_TERM))
 
         # No blocking in this simulation :)
         # elif eventTrans == Transition.TO_BLOCK:
             # pass
 
         elif eventTrans == Transition.TO_PREEMPT:
-            printStateIntro(currentTime, pod, timeInPrevState, State.WAIT)
+            printStateIntro(currentTime, pod, timeInPrevState, State.PREEMPT)
             # Update state info
             pod.state = State.WAIT
             pod.stateTS = currentTime
-            # Add to scheduler
-            myScheduler.addPod(pod)
             # Return resouce to node
             node = pod.node
             pod.node = None
             node.removePod(pod)
+            # Add to scheduler
+            myScheduler.addPod(pod)
 
         elif eventTrans == Transition.TO_TERM:
             printStateIntro(currentTime, pod, timeInPrevState, State.TERM)
