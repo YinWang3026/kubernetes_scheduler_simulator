@@ -1,4 +1,4 @@
-from random import randint
+from random import randint, choice
 from name_generator import iter_all_strings
 
 gen = iter_all_strings()
@@ -12,8 +12,8 @@ with open(outFile, 'w') as f:
             f.write("\n")
 
         nodeName = "Node" + next(gen)
-        cpu = randint(10,16)
-        gpu = randint(10,32)
-        ram = randint(32,128)
+        cpu = choice([4,8,16,32,64,128])
+        gpu = choice([1,2,4,8])
+        ram = choice([4,8,16,32,64,128])
 
         f.write("%s %d %d %d" % (nodeName, cpu, gpu, ram))
