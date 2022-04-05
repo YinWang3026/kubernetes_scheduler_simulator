@@ -115,6 +115,12 @@ def main(argv):
                 myScheduler = SRTF()
             elif arg == "SRF":
                 myScheduler = SRF()
+            elif arg == "RR":
+                myScheduler = RR()
+            elif arg == "PRIO":
+                myScheduler = PRIO()
+            # elif arg == "DRF":
+            #     myScheduler = PRIO()
             # elif arg == "Lottery":
             #     myScheduler = Lottery()
         elif opt in ("-d", "--nsched="):
@@ -225,16 +231,34 @@ def simulate(myEventQueue: EventQueue, myScheduler: Scheduler, myNodeList: NodeL
             pod.stateTS = currentTime
             pod.execStartTime = currentTime
             pod.totalWaitTime += timeInPrevState
-            # Create new event to fire off when proc is done, put the proc to DONE
-            myEventQueue.putEvent(Event(currentTime+pod.work, pod, Transition.TO_TERM))
+
+            if pod.remainWork > myScheduler.quantum: #Remaining time to run is greater than the quantum
+                pod.remainWork -= myScheduler.quantum
+    
+                # Create new event to preempt the proc after the quantum, put the proc to preempt
+                myEventQueue.putEvent(Event(currentTime+myScheduler.quantum, pod, Transition.TO_PREEMPT))
+
+            else: #Remaining time to run is smaller than the quantum
+                pod.remainWork -= min(myScheduler.quantum, pod.remainWork)
+
+                # Create new event to fire off when proc is done, put the proc to DONE
+                myEventQueue.putEvent(Event(currentTime+pod.remainWork, pod, Transition.TO_TERM))
 
         # No blocking in this simulation :)
         # elif eventTrans == Transition.TO_BLOCK:
             # pass
 
         elif eventTrans == Transition.TO_PREEMPT:
-            # No preemption in FCFS, Pod runs till the end
-            pass
+            printStateIntro(currentTime, pod, timeInPrevState, State.PREEMPT)
+            # Update state info
+            pod.state = State.WAIT
+            pod.stateTS = currentTime
+            # Return resouce to node
+            node = pod.node
+            pod.node = None
+            node.removePod(pod)
+            # Add to scheduler
+            myScheduler.addPod(pod)
 
         elif eventTrans == Transition.TO_TERM:
             printStateIntro(currentTime, pod, timeInPrevState, State.TERM)
