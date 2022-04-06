@@ -103,22 +103,33 @@ def main(argv):
     for opt, arg in opts:
         if opt in ("-h", "--help"):
             userCallHelper()
-            sys.exit()
+            sys.exit(1)
         elif opt in ("-p", "--pfile"):
             pfile = arg
         elif opt in ("-n", "--nfile"):
             nfile = arg
         elif opt in ("-s", "--sched"):
-            if arg == "FCFS":
+            arg = arg.split(":")
+            if arg[0] == "FCFS":
                 myScheduler = FCFS()
-            elif arg == "SRTF":
+            elif arg[0] == "SRTF":
                 myScheduler = SRTF()
-            elif arg == "SRF":
+            elif arg[0] == "SRF":
                 myScheduler = SRF()
-            elif arg == "RR":
-                myScheduler = RR()
-            elif arg == "PRIO":
-                myScheduler = PRIO()
+            elif arg[0] == "RR": # RR:quantum
+                if len(arg) == 1:
+                    myScheduler = RR(10)
+                elif len(arg) == 2:
+                    myScheduler = RR(arg[1])
+                else:
+                    print("RR sched should be RR:quantum")
+            elif arg[0] == "PRIO": # PRIO:quantum:maxprio
+                if len(arg) == 1:
+                    myScheduler = PRIO(4, 10)
+                elif len(arg) == 3:
+                    myScheduler = PRIO(arg[1], arg[2])
+                else:
+                    print("PRIO sched should be PRIO:quantum:maxprio")
             # elif arg == "DRF":
             #     myScheduler = PRIO()
             # elif arg == "Lottery":
@@ -251,6 +262,7 @@ def simulate(myEventQueue: EventQueue, myScheduler: Scheduler, myNodeList: NodeL
             # Update state info
             pod.state = State.WAIT
             pod.stateTS = currentTime
+            pod.dynamicPrio -= 1
             # Return resouce to node
             node = pod.node
             pod.node = None

@@ -28,6 +28,7 @@ class Pod:
         self.state = state # Current state
         self.stateTS = arrivalTime # Time that entered current state
         self.remainWork = work # remaining time to finish work
+        self.dynamicPrio = prio # Current prio
 
         # Benchmarking values
         self.execStartTime = 0
