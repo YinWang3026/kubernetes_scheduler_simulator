@@ -17,8 +17,8 @@ with open(outFile, 'w') as f:
         work = randint(100, 1000)
         prio = randint(1, 4)
         tickets = randint(10, 100)
-        cpu = randint(1,16)
-        gpu = randint(1,32)
+        cpu = randint(1,64)
+        gpu = randint(1,8)
         ram = randint(1,128)
 
         currentTime += arrivalTime

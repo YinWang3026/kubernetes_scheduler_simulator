@@ -12,7 +12,7 @@ with open(outFile, 'w') as f:
             f.write("\n")
 
         nodeName = "Node" + next(gen)
-        cpu = choice([4,8,16,32,64,128])
+        cpu = choice([4,8,16,32,64])
         gpu = choice([1,2,4,8])
         ram = choice([4,8,16,32,64,128])
 
