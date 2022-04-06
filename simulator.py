@@ -233,16 +233,14 @@ def simulate(myEventQueue: EventQueue, myScheduler: Scheduler, myNodeList: NodeL
             pod.totalWaitTime += timeInPrevState
 
             if pod.remainWork > myScheduler.quantum: #Remaining time to run is greater than the quantum
-                pod.remainWork -= myScheduler.quantum
-    
                 # Create new event to preempt the proc after the quantum, put the proc to preempt
                 myEventQueue.putEvent(Event(currentTime+myScheduler.quantum, pod, Transition.TO_PREEMPT))
+                pod.remainWork -= myScheduler.quantum
 
             else: #Remaining time to run is smaller than the quantum
-                pod.remainWork -= min(myScheduler.quantum, pod.remainWork)
-
                 # Create new event to fire off when proc is done, put the proc to DONE
                 myEventQueue.putEvent(Event(currentTime+pod.remainWork, pod, Transition.TO_TERM))
+                pod.remainWork = 0
 
         # No blocking in this simulation :)
         # elif eventTrans == Transition.TO_BLOCK:
