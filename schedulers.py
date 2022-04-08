@@ -1,4 +1,5 @@
 from collections import deque
+from typing import Tuple
 from pods import *
 from nodes import *
 from sys import exit
@@ -9,15 +10,49 @@ class Scheduler:
         self.quantum = quantum
         self.maxprio = maxprio
         self.isPreemptive = preemptive
-        self.podQueue = deque()
+        self.runningPods = [] # Pods currently running in nodes
+        self.podQueue = deque() # Pods in the queue waiting to be scheduled
     
-    def addPod(self, pod: Pod) -> None: 
+    def addPod(self, pod: Pod) -> None:
+        # Adds Pod to queue
         print("Derived class please implement addPod()")
         exit(1)
 
     def schedulePods(self, nodeList: NodeList) -> list[Pod]:
-        print("Derived class please implement schedulePod()")
+        # Schedule Pods in queue to Node
+        print("Derived class please implement schedulePods()")
         exit(1)
+
+    def rmFromRunList(self, pod: Pod) -> None:
+        index = 0
+        while index < len(self.runningPods):
+            if self.runningPods[index].name == pod.name:
+                break
+            index += 1
+        if index == len(self.runningPods):
+            print("Fatal: attempting to remove pod not in runingPods")
+            exit(1)
+        self.runningPods.pop(index)
+    
+    def addToRunList(self, pod: Pod) -> None:
+        index = 0
+        while index < len(self.runningPods):
+            if self.runningPods[index].dynamicPrio < pod.dynamicPrio:
+                break
+            index += 1
+        self.runningPods.insert(index, pod)
+    
+    def preemptPod(self, highPrioPod: Pod) -> Pod:
+        index = 0
+        while index < len(self.runningPods):
+            currPod = self.runningPods[index]
+            if currPod.dynamicPrio < highPrioPod.dynamicPrio \
+                and currPod.cpu + currPod.node.curCpu >= highPrioPod.dynamicPrio \
+                and currPod.gpu + currPod.node.curGpu >= highPrioPod.dynamicPrio \
+                and currPod.ram + currPod.node.curRam >= highPrioPod.dynamicPrio:
+                break
+            index += 1
+        return self.runningPods.pop(index)
     
     def getQueueLength(self) -> int:
         return len(self.podQueue)
@@ -33,9 +68,15 @@ class Scheduler:
         for i in self.podQueue:
             s += i.name + " "
         return s
+
+    def getRunPodStr(self) -> str:
+        s = "RunningPods[%d]:" % (len(self.runningPods))
+        for i in self.runningPods:
+            s += i.name + " "
+        return s
     
     def __repr__(self) -> str:
-        return "Quantum: %d, Maxprio: %d, Preemption: %s"\
+        return "Quantum: %d, Maxprio: %d, Preemptive: %s"\
              % (self.quantum, self.maxprio, self.isPreemptive)
         
 class FCFS(Scheduler): # First Come First Served
@@ -269,6 +310,13 @@ class PRIO(Scheduler): # Priority scheduling
 
     def __repr__(self) -> str:
         return "Scheduler: PRIO " + super().__repr__()
+
+# class PRIO(Scheduler): # Preemptive Priority scheduling
+#     def __init__(self, maxprio: int, quantum: int) -> None:
+#         super().__init__(maxprio=maxprio, quantum=quantum, preemptive=True)
+    
+#     def __repr__(self) -> str:
+#         return "Scheduler: PREEMPT PRIO " + super().__repr__()
 
 # class DRF(Scheduler): # DRF
 #     def __init__(self) -> None:

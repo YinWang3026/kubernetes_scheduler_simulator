@@ -1,6 +1,5 @@
 from collections import deque
 from enum import Enum, auto
-from random import randint
 import sys, getopt
 
 import global_
@@ -226,6 +225,9 @@ def simulate(myEventQueue: EventQueue, myScheduler: Scheduler, myNodeList: NodeL
         event = None # Disconnect pointer to object
         myNodeList.setCurrentTime(currentTime)
 
+        if global_.qFlag:
+            print(myScheduler.getRunPodStr())
+
         # Process events
         if eventTrans == Transition.TO_WAIT:
             printStateIntro(currentTime, pod, timeInPrevState, State.WAIT)
@@ -242,6 +244,9 @@ def simulate(myEventQueue: EventQueue, myScheduler: Scheduler, myNodeList: NodeL
             pod.stateTS = currentTime
             pod.execStartTime = currentTime
             pod.totalWaitTime += timeInPrevState
+            # Take resouce from node
+            # pod.node.addPod(pod)
+            myScheduler.addToRunList(pod)
 
             if pod.remainWork > myScheduler.quantum: #Remaining time to run is greater than the quantum
                 # Create new event to preempt the proc after the quantum, put the proc to preempt
@@ -260,9 +265,10 @@ def simulate(myEventQueue: EventQueue, myScheduler: Scheduler, myNodeList: NodeL
         elif eventTrans == Transition.TO_PREEMPT:
             printStateIntro(currentTime, pod, timeInPrevState, State.PREEMPT)
             # Update state info
-            pod.state = State.WAIT
+            pod.state = State.PREEMPT
             pod.stateTS = currentTime
             pod.dynamicPrio -= 1
+            myScheduler.rmFromRunList(pod)
             # Return resouce to node
             node = pod.node
             pod.node = None
@@ -276,6 +282,7 @@ def simulate(myEventQueue: EventQueue, myScheduler: Scheduler, myNodeList: NodeL
             pod.state = State.TERM
             pod.stateTS = currentTime
             pod.finishTime = currentTime
+            myScheduler.rmFromRunList(pod)
             # Return resouce to node
             node = pod.node
             pod.node = None
