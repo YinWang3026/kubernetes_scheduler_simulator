@@ -49,9 +49,9 @@ class Scheduler:
         while index < len(self.runningPods):
             currPod = self.runningPods[index]
             if currPod.dynamicPrio < highPrioPod.dynamicPrio \
-                and currPod.cpu + currPod.node.curCpu >= highPrioPod.dynamicPrio \
-                and currPod.gpu + currPod.node.curGpu >= highPrioPod.dynamicPrio \
-                and currPod.ram + currPod.node.curRam >= highPrioPod.dynamicPrio:
+                and currPod.cpu + currPod.node.curCpu >= highPrioPod.cpu \
+                and currPod.gpu + currPod.node.curGpu >= highPrioPod.gpu \
+                and currPod.ram + currPod.node.curRam >= highPrioPod.ram:
                 break
             index += 1
         return self.runningPods.pop(index)
