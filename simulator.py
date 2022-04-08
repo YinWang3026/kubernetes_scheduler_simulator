@@ -244,8 +244,6 @@ def simulate(myEventQueue: EventQueue, myScheduler: Scheduler, myNodeList: NodeL
             pod.stateTS = currentTime
             pod.execStartTime = currentTime
             pod.totalWaitTime += timeInPrevState
-            # Take resouce from node
-            # pod.node.addPod(pod)
             myScheduler.addToRunList(pod)
 
             if pod.remainWork > myScheduler.quantum: #Remaining time to run is greater than the quantum

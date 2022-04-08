@@ -90,21 +90,19 @@ class FCFS(Scheduler): # First Come First Served
         # Not sure how this going to work yet
         scheduledPods = []
         while len(self.podQueue) > 0:
-            currPod = self.podQueue[0]
+            currPod = self.podQueue.popleft()
             matchedNodes = myNodeList.getMatch(currPod, 1)
-            if len(matchedNodes) > 0:
-                # At least one Node can run this pod
+            if len(matchedNodes) > 0: # At least one Node can run this pod
                 chosenNode = matchedNodes[0] # There is only one node here lol
-
                 if global_.tFlag:
                     print("Matched Pod [%s] with Node [%s]" % (currPod.name, chosenNode.name))
 
-                chosenNode.addPod(currPod) # Add pod to node
+                chosenNode.addPod(currPod) # Take the resource now, so that no other nodes can take the resource
                 currPod.node = chosenNode # Link node to pod
-                self.podQueue.popleft() # Remove this pod from queue
                 scheduledPods.append(currPod)
             else:
                 # No node can run this pod, we just wait and try schedule this pod again later
+                self.podQueue.appendleft(currPod)
                 if global_.tFlag:
                     print("Unable to Match Pod [%s] with Nodes" % (currPod.name))
                 break
@@ -133,21 +131,19 @@ class SRTF(Scheduler): # Shortest Remaining Time First
         # Not sure how this going to work yet
         scheduledPods = []
         while len(self.podQueue) > 0:
-            currPod = self.podQueue[0]
+            currPod = self.podQueue.popleft()
             matchedNodes = myNodeList.getMatch(currPod, 1)
-            if len(matchedNodes) > 0:
-                # At least one Node can run this pod
+            if len(matchedNodes) > 0: # At least one Node can run this pod
                 chosenNode = matchedNodes[0] # There is only one node here lol
-
                 if global_.tFlag:
                     print("Matched Pod [%s] with Node [%s]" % (currPod.name, chosenNode.name))
 
-                chosenNode.addPod(currPod) # Add pod to node
+                chosenNode.addPod(currPod) # Take the resource now, so that no other nodes can take the resource
                 currPod.node = chosenNode # Link node to pod
-                self.podQueue.popleft() # Remove this pod from queue
                 scheduledPods.append(currPod)
             else:
                 # No node can run this pod, we just wait and try schedule this pod again later
+                self.podQueue.appendleft(currPod)
                 if global_.tFlag:
                     print("Unable to Match Pod [%s] with Nodes" % (currPod.name))
                 break
@@ -181,21 +177,19 @@ class SRF(Scheduler): # Smallest Resource First
         # Not sure how this going to work yet
         scheduledPods = []
         while len(self.podQueue) > 0:
-            currPod = self.podQueue[0]
+            currPod = self.podQueue.popleft()
             matchedNodes = myNodeList.getMatch(currPod, 1)
-            if len(matchedNodes) > 0:
-                # At least one Node can run this pod
+            if len(matchedNodes) > 0: # At least one Node can run this pod
                 chosenNode = matchedNodes[0] # There is only one node here lol
-
                 if global_.tFlag:
                     print("Matched Pod [%s] with Node [%s]" % (currPod.name, chosenNode.name))
 
-                chosenNode.addPod(currPod) # Add pod to node
+                chosenNode.addPod(currPod) # Take the resource now, so that no other nodes can take the resource
                 currPod.node = chosenNode # Link node to pod
-                self.podQueue.popleft() # Remove this pod from queue
                 scheduledPods.append(currPod)
             else:
                 # No node can run this pod, we just wait and try schedule this pod again later
+                self.podQueue.appendleft(currPod)
                 if global_.tFlag:
                     print("Unable to Match Pod [%s] with Nodes" % (currPod.name))
                 break
@@ -216,21 +210,19 @@ class RR(Scheduler): # Round Robin
         # Not sure how this going to work yet
         scheduledPods = []
         while len(self.podQueue) > 0:
-            currPod = self.podQueue[0]
+            currPod = self.podQueue.popleft()
             matchedNodes = myNodeList.getMatch(currPod, 1)
-            if len(matchedNodes) > 0:
-                # At least one Node can run this pod
+            if len(matchedNodes) > 0: # At least one Node can run this pod
                 chosenNode = matchedNodes[0] # There is only one node here lol
-
                 if global_.tFlag:
                     print("Matched Pod [%s] with Node [%s]" % (currPod.name, chosenNode.name))
 
-                chosenNode.addPod(currPod) # Add pod to node
+                chosenNode.addPod(currPod) # Take the resource now, so that no other nodes can take the resource
                 currPod.node = chosenNode # Link node to pod
-                self.podQueue.popleft() # Remove this pod from queue
                 scheduledPods.append(currPod)
             else:
                 # No node can run this pod, we just wait and try schedule this pod again later
+                self.podQueue.appendleft(currPod)
                 if global_.tFlag:
                     print("Unable to Match Pod [%s] with Nodes" % (currPod.name))
                 break
