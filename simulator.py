@@ -60,9 +60,9 @@ class EventQueue:
 
         del self.queue[i]
 
-    def getEventByPod(self, pod: Pod) -> int:
-        for i in range(0, len(self.queue)):
-            if self.queue[i].pod.name == pod.name:
+    def getEventByPod(self, pod: Pod) -> Event:
+        for i in self.queue:
+            if i.pod.name == pod.name:
                 return i
         
         return None
@@ -83,6 +83,55 @@ def userCallHelper():
     print('-v for general debugging info')
     print('-q for printing scheduler queue')
     print('-t for showing simulation traces')
+
+def parseSchedulerInfo(arg: str) -> Scheduler:
+    myScheduler = None
+    arg = arg.split(":")
+
+    preemptive = False
+    try:
+        preemptive = True if arg[1] == "1" else False
+    except:
+        preemptive = False
+
+    maxPrio = 4
+    try:
+        maxPrio = int(arg[2])
+    except:
+        maxPrio = 4
+        
+    quantum = 10000
+    try:
+        quantum = int(arg[3])
+    except:
+        quantum = 10000
+
+    if arg[0] == "FCFS":
+        myScheduler = FCFS(preemptive=preemptive)
+    elif arg[0] == "SRTF":
+        myScheduler = SRTF()
+    elif arg[0] == "SRF":
+        myScheduler = SRF()
+    elif arg[0] == "RR": # RR:quantum
+        if len(arg) == 1:
+            myScheduler = RR(10)
+        elif len(arg) == 2:
+            myScheduler = RR(arg[1])
+        else:
+            print("RR sched should be RR:quantum")
+    elif arg[0] == "PRIO": # PRIO:quantum:maxprio
+        if len(arg) == 1:
+            myScheduler = PRIO(4, 10)
+        elif len(arg) == 3:
+            myScheduler = PRIO(arg[1], arg[2])
+        else:
+            print("PRIO sched should be PRIO:quantum:maxprio")
+    # elif arg == "DRF":
+    #     myScheduler = PRIO()
+    # elif arg == "Lottery":
+    #     myScheduler = Lottery()
+
+    return myScheduler
 
 def main(argv):
     pfile = ''
@@ -108,32 +157,8 @@ def main(argv):
         elif opt in ("-n", "--nfile"):
             nfile = arg
         elif opt in ("-s", "--sched"):
-            arg = arg.split(":")
-            if arg[0] == "FCFS":
-                myScheduler = FCFS()
-            elif arg[0] == "SRTF":
-                myScheduler = SRTF()
-            elif arg[0] == "SRF":
-                myScheduler = SRF()
-            elif arg[0] == "RR": # RR:quantum
-                if len(arg) == 1:
-                    myScheduler = RR(10)
-                elif len(arg) == 2:
-                    myScheduler = RR(arg[1])
-                else:
-                    print("RR sched should be RR:quantum")
-            elif arg[0] == "PRIO": # PRIO:quantum:maxprio
-                if len(arg) == 1:
-                    myScheduler = PRIO(4, 10)
-                elif len(arg) == 3:
-                    myScheduler = PRIO(arg[1], arg[2])
-                else:
-                    print("PRIO sched should be PRIO:quantum:maxprio")
-            # elif arg == "DRF":
-            #     myScheduler = PRIO()
-            # elif arg == "Lottery":
-            #     myScheduler = Lottery()
-        elif opt in ("-d", "--nsched="):
+            myScheduler = parseSchedulerInfo(arg)
+        elif opt in ("-d", "--nsched"):
             if arg == "topK":
                 myNodeList = NodeListByDistance()
         elif opt in ("-v"):
@@ -225,7 +250,7 @@ def simulate(myEventQueue: EventQueue, myScheduler: Scheduler, myNodeList: NodeL
         event = None # Disconnect pointer to object
         myNodeList.setCurrentTime(currentTime)
 
-        if global_.qFlag:
+        if global_.tFlag:
             print(myScheduler.getRunPodStr())
 
         # Process events
@@ -291,13 +316,23 @@ def simulate(myEventQueue: EventQueue, myScheduler: Scheduler, myNodeList: NodeL
         # If there are pods in the sched q and cannot be sched, then no point of running loop, exit
         # As long as a event happened, try to schedule some pods
         if myEventQueue.getNextEvtTime() != currentTime:
-            if global_.qFlag:
+            if global_.tFlag:
                 print(myScheduler.getPodQueueStr())
 
-            scheduledPods = myScheduler.schedulePods(myNodeList)
-            for p in scheduledPods:
+            scheduledPods, preemptedPods = myScheduler.schedulePods(myNodeList)
+            while len(scheduledPods) > 0:
                 # There is a pod to run, create a new event
-                myEventQueue.putEvent(Event(currentTime, p, Transition.TO_RUN))
+                myEventQueue.putEvent(Event(currentTime, scheduledPods.pop(), Transition.TO_RUN))
+            while len(preemptedPods) > 0:
+                # There is a pod to preempt, create a new event
+                p = preemptedPods.pop()
+                futureEvent = myEventQueue.getEventByPod(p)
+                if futureEvent.timeStamp > currentTime+30:
+                    remainingTime = futureEvent.timeStamp - currentTime+30
+                    p.remainWork += remainingTime # Restore the amount of work didn't get to do
+                    myEventQueue.removeEvent(futureEvent)
+                    futureEvent = None
+                    myEventQueue.putEvent(Event(currentTime+30, p, Transition.TO_PREEMPT)) # Has 30 sec to run before termination
 
         # Get the next event
         event = myEventQueue.getEvent()
