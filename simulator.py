@@ -112,7 +112,7 @@ def parseSchedulerInfo(arg: str) -> Scheduler:
     elif arg[0] == "SRTF":
         myScheduler = SRTF(preemptive=preemptive)
     elif arg[0] == "SRF":
-        myScheduler = SRF()
+        myScheduler = SRF(preemptive=preemptive)
     elif arg[0] == "RR": # RR:quantum
         myScheduler = RR(quantum=quantum, preemptive=preemptive)
     elif arg[0] == "PRIO": # PRIO:quantum:maxprio

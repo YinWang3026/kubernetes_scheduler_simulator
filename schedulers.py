@@ -216,50 +216,81 @@ class SRTF(Scheduler): # Shortest Remaining Time First
         return "Scheduler: SRTF " + super().__repr__()
 
 class SRF(Scheduler): # Smallest Resource First
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, preemptive: bool) -> None:
+        super().__init__(preemptive=preemptive)
 
     def addToQueue(self, pod: Pod) -> None:
-        addloc = -1
-
-        curr_score = (pod.cpu)**2 + (pod.gpu)**2 + (pod.ram)**2
-        for i in range(len(self.podQueue)):
-            aggregate_score = (self.podQueue[i].cpu)**2 + (self.podQueue[i].gpu)**2 + (self.podQueue[i].ram)**2
-
-            if curr_score < aggregate_score:
-                self.podQueue.insert(i, pod)
-                addloc = i
+        index = 0
+        currScore = (pod.cpu)**2 + (pod.gpu)**2 + (pod.ram)**2
+        while index < len(self.podQueue):
+            aggregateScore = (self.podQueue[index].cpu)**2 + (self.podQueue[index].gpu)**2 + (self.podQueue[index].ram)**2
+            if currScore <= aggregateScore:
                 break
+            index += 1
 
-        if addloc == -1:
-            self.podQueue.append(pod)
+        while index < len(self.podQueue):
+            aggregateScore = (self.podQueue[index].cpu)**2 + (self.podQueue[index].gpu)**2 + (self.podQueue[index].ram)**2
+            if currScore == aggregateScore:
+                if pod.prio > self.podQueue[index].prio:
+                    break
+                index += 1
+            else:
+                break
+        
+        self.podQueue.insert(index, pod)
         
 
-    def schedulePods(self, myNodeList: NodeList) -> list[Pod]:
-        # Not sure how this going to work yet
+    def schedulePods(self, myNodeList: NodeList) -> Tuple[list[Pod],list[Pod]]:
+        if len(self.podQueue) == 0:
+            return [], []
+
         scheduledPods = []
+        preemptedPods = []
+        notScheduledPods = []
+        currScore = (self.podQueue[0].cpu)**2 + (self.podQueue[0].gpu)**2 + (self.podQueue[0].ram)**2
         while len(self.podQueue) > 0:
-            currPod = self.podQueue.popleft()
-            matchedNodes = myNodeList.getMatch(currPod, 1)
-            if len(matchedNodes) > 0: # At least one Node can run this pod
-                chosenNode = matchedNodes[0] # There is only one node here lol
-                if global_.qFlag:
-                    print("Matched Pod [%s] with Node [%s]" % (currPod.name, chosenNode.name))
+            aggregateScore = (self.podQueue[0].cpu)**2 + (self.podQueue[0].gpu)**2 + (self.podQueue[0].ram)**2
+            if currScore == aggregateScore: # Schedule every pod with the same smallest score
+                # Try to schedule all the pods of current time
+                currPod = self.podQueue.popleft()
+                matchedNodes = myNodeList.getMatch(currPod, 1)
+                if len(matchedNodes) > 0: # At least one Node can run this pod
+                    # Not sure how this going to work yet. TODO FIND A BETTER WAY TO PICK CHOSEN NODE
+                    chosenNode = matchedNodes[0] # There is only one node here lol
+                    if global_.qFlag:
+                        print("Matched Pod [%s] with Node [%s]" % (currPod.name, chosenNode.name))
 
-                chosenNode.addPod(currPod) # Take the resource now, so that no other nodes can take the resource
-                currPod.node = chosenNode # Link node to pod
-                scheduledPods.append(currPod)
+                    chosenNode.addPod(currPod) # Take the resource now, so that no other nodes can take the resource
+                    currPod.node = chosenNode # Link node to pod
+                    scheduledPods.append(currPod)
+                else:
+                    # No node can run this pod
+                    if self.isPreemptive: # If preemptive, then try removing a pod
+                        preemptedPod = self.preemptPod(currPod)
+                        if preemptedPod != None:
+                            preemptedPods.append(preemptedPod)
+                            if global_.qFlag:
+                                print("Pod [%s] w/ Prio [%d] is preempted by Pod [%s] w/ Prio [%d]" \
+                                    % (preemptedPod.name, preemptedPod.prio, currPod.name, currPod.prio))
+                        else:
+                            if global_.qFlag:
+                                print("Unable to Preempt Pods for Pod [%s]" % (currPod.name))
+                        # Put pod back into queue and wait ...
+                        notScheduledPods.append(currPod)
+                    else: # Otherwise, put pod back into queue and wait ...
+                        notScheduledPods.append(currPod)
+                        if global_.qFlag:
+                            print("Unable to Match Pod [%s] with Nodes" % (currPod.name))
             else:
-                # No node can run this pod, we just wait and try schedule this pod again later
-                self.podQueue.appendleft(currPod)
-                if global_.qFlag:
-                    print("Unable to Match Pod [%s] with Nodes" % (currPod.name))
                 break
+    
+        while len(notScheduledPods) > 0:
+            self.addToQueue(notScheduledPods.pop())
 
-        return scheduledPods
+        return scheduledPods, preemptedPods
 
     def __repr__(self) -> str:
-        return "SRF"
+        return "Scheduler: SRF " + super().__repr__()
 
 class RR(FCFS): # Round Robin
     def __init__(self, quantum: int, preemptive: bool) -> None:
