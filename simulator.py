@@ -262,7 +262,7 @@ def simulate(myEventQueue: EventQueue, myScheduler: Scheduler, myNodeList: NodeL
             pod.state = State.WAIT
             pod.stateTS = currentTime
             # Add to scheduler
-            myScheduler.addPod(pod)
+            myScheduler.addToQueue(pod)
 
         elif eventTrans == Transition.TO_RUN:
             printStateIntro(currentTime, pod, timeInPrevState, State.RUN)
@@ -300,7 +300,7 @@ def simulate(myEventQueue: EventQueue, myScheduler: Scheduler, myNodeList: NodeL
             pod.node = None
             node.removePod(pod)
             # Add to scheduler
-            myScheduler.addPod(pod)
+            myScheduler.addToQueue(pod)
 
         elif eventTrans == Transition.TO_TERM:
             printStateIntro(currentTime, pod, timeInPrevState, State.TERM)

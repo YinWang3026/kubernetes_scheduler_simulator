@@ -194,14 +194,14 @@ Matching Pod [PodB] with nodes
 Unable to Preempt Pods for Pod [PodB]
 RunningPods[0]:
 currentTime: 0, podName: PodA, timeInPrevState: 0, from: State.WAIT to: State.RUN
-SchedQ[3]:PodB PodC PodD
-Matching Pod [PodB] with nodes
-Unable to Preempt Pods for Pod [PodB]
+SchedQ[3]:PodC PodD PodB
+Matching Pod [PodC] with nodes
+Unable to Preempt Pods for Pod [PodC]
 RunningPods[1]:PodA
 currentTime: 1, podName: PodE, timeInPrevState: 0, from: State.CREATED to: State.WAIT
-SchedQ[4]:PodB PodC PodD PodE
-Matching Pod [PodB] with nodes
-Unable to Preempt Pods for Pod [PodB]
+SchedQ[4]:PodD PodB PodC PodE
+Matching Pod [PodD] with nodes
+Unable to Preempt Pods for Pod [PodD]
 RunningPods[1]:PodA
 currentTime: 452, podName: PodA, timeInPrevState: 452, from: State.RUN to: State.TERM
 Time [452] Removing Pod [PodA] from Node [NodeC]
@@ -217,9 +217,9 @@ Matching Pod [PodC] with nodes
 Unable to Preempt Pods for Pod [PodC]
 RunningPods[0]:
 currentTime: 452, podName: PodB, timeInPrevState: 452, from: State.WAIT to: State.RUN
-SchedQ[3]:PodC PodD PodE
-Matching Pod [PodC] with nodes
-Unable to Preempt Pods for Pod [PodC]
+SchedQ[3]:PodD PodC PodE
+Matching Pod [PodD] with nodes
+Unable to Preempt Pods for Pod [PodD]
 RunningPods[1]:PodB
 currentTime: 904, podName: PodB, timeInPrevState: 452, from: State.RUN to: State.TERM
 Time [904] Removing Pod [PodB] from Node [NodeC]

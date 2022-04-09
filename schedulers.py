@@ -13,9 +13,9 @@ class Scheduler:
         self.runningPods = [] # Pods currently running in nodes
         self.podQueue = deque() # Pods in the queue waiting to be scheduled
     
-    def addPod(self, pod: Pod) -> None:
+    def addToQueue(self, pod: Pod) -> None:
         # Adds Pod to queue
-        print("Derived class please implement addPod()")
+        print("Derived class please implement addToQueue()")
         exit(1)
 
     def schedulePods(self, myNodeList: NodeList) -> Tuple[list[Pod],list[Pod]]:
@@ -86,9 +86,19 @@ class FCFS(Scheduler): # First Come First Served
         # Does not care about quantum or maxprio, leaving as some large default
         super().__init__(preemptive=preemptive)
 
-    def addPod(self, pod: Pod) -> None:
+    def addToQueue(self, pod: Pod) -> None:
         # Queue needs to be sorted by Pod.stateTS and Pod.prio
-        self.podQueue.append(pod)
+        index = 0
+        while index < len(self.podQueue):
+            if pod.stateTS < self.podQueue[index].stateTS:
+                break
+            index += 1
+        while index < len(self.podQueue) and pod.stateTS == self.podQueue[index].stateTS:
+            if pod.prio > self.podQueue[index].prio:
+                break
+            index += 1
+        
+        self.podQueue.insert(index, pod)
 
     def schedulePods(self, myNodeList: NodeList) -> Tuple[list[Pod],list[Pod]]:
         scheduledPods = []
@@ -118,9 +128,9 @@ class FCFS(Scheduler): # First Come First Served
                         if global_.qFlag:
                             print("Unable to Preempt Pods for Pod [%s]" % (currPod.name))
                     # Put pod back into queue and wait ...
-                    self.podQueue.appendleft(currPod)
+                    self.addToQueue(currPod)
                 else: # Otherwise, put pod back into queue and wait ...
-                    self.podQueue.appendleft(currPod)
+                    self.addToQueue(currPod)
                     if global_.qFlag:
                         print("Unable to Match Pod [%s] with Nodes" % (currPod.name))
                 break
@@ -134,7 +144,7 @@ class SRTF(Scheduler): # Shortest Remaining Time First
     def __init__(self) -> None:
         super().__init__()
 
-    def addPod(self, pod: Pod) -> None: # put smallest usage time 
+    def addToQueue(self, pod: Pod) -> None: # put smallest usage time 
         addloc = -1
         for i in range(len(self.podQueue)):
             if pod.remainWork < self.podQueue[i].remainWork:
@@ -175,7 +185,7 @@ class SRF(Scheduler): # Smallest Resource First
     def __init__(self) -> None:
         super().__init__()
 
-    def addPod(self, pod: Pod) -> None:
+    def addToQueue(self, pod: Pod) -> None:
         addloc = -1
 
         curr_score = (pod.cpu)**2 + (pod.gpu)**2 + (pod.ram)**2
@@ -221,7 +231,7 @@ class RR(Scheduler): # Round Robin
     def __init__(self, quantum: int) -> None:
         super().__init__(quantum=quantum)
 
-    def addPod(self, pod: Pod) -> None:
+    def addToQueue(self, pod: Pod) -> None:
         self.podQueue.append(pod)
 
     def schedulePods(self, myNodeList: NodeList) -> list[Pod]:
@@ -260,7 +270,7 @@ class PRIO(Scheduler): # Priority scheduling
             self.activeQ.append(deque())
             self.expireQ.append(deque())
 
-    def addPod(self, pod: Pod) -> None:
+    def addToQueue(self, pod: Pod) -> None:
         if pod.dynamicPrio == -1: #when dynamic priority reaches -1, add to the expire queue
             pod.dynamicPrio = pod.prio 
             self.expireQ[pod.dynamicPrio-1].append(pod)
@@ -314,7 +324,7 @@ class PRIO(Scheduler): # Priority scheduling
                 break
         
         while notScheduledPods:
-            self.addPod(notScheduledPods.popleft()) # Put the not scheduled pods back into queue
+            self.addToQueue(notScheduledPods.popleft()) # Put the not scheduled pods back into queue
 
         return scheduledPods
 
@@ -332,7 +342,7 @@ class PRIO(Scheduler): # Priority scheduling
 #     def __init__(self) -> None:
 #         super().__init__()
 
-#     def addPod(self, pod: Pod) -> None:
+#     def addToQueue(self, pod: Pod) -> None:
 #         pass
 
 #     def __repr__(self) -> str:
@@ -342,7 +352,7 @@ class PRIO(Scheduler): # Priority scheduling
 #     def __init__(self) -> None:
 #         self.queue = deque()
 
-#     def addPod(self, pod: Pod) -> None:
+#     def addToQueue(self, pod: Pod) -> None:
 #         pass
                 
 #     def __repr__(self) -> str:
@@ -352,7 +362,7 @@ class PRIO(Scheduler): # Priority scheduling
 #     def __init__(self) -> None:
 #         self.queue = deque()
 
-#     def addPod(self, pod: Pod) -> None:
+#     def addToQueue(self, pod: Pod) -> None:
 #         pass
                 
 #     def __repr__(self) -> str:
