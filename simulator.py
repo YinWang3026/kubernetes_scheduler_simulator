@@ -110,7 +110,7 @@ def parseSchedulerInfo(arg: str) -> Scheduler:
     if arg[0] == "FCFS":
         myScheduler = FCFS(preemptive=preemptive)
     elif arg[0] == "SRTF":
-        myScheduler = SRTF()
+        myScheduler = SRTF(preemptive=preemptive)
     elif arg[0] == "SRF":
         myScheduler = SRF()
     elif arg[0] == "RR": # RR:quantum

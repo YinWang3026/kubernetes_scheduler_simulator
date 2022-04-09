@@ -150,27 +150,37 @@ class FCFS(Scheduler): # First Come First Served
         return "Scheduler: FCFS " + super().__repr__()
     
 class SRTF(Scheduler): # Shortest Remaining Time First
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, preemptive: bool) -> None:
+        super().__init__(preemptive=preemptive)
 
     def addToQueue(self, pod: Pod) -> None: # put smallest usage time 
-        addloc = -1
-        for i in range(len(self.podQueue)):
-            if pod.remainWork < self.podQueue[i].remainWork:
-                self.podQueue.insert(i, pod)
-                addloc = i
+        # Queue needs to be sorted by Pod.remainingWork and Pod.prio
+        index = 0
+        while index < len(self.podQueue):
+            if pod.remainWork <= self.podQueue[index].remainWork:
                 break
+            index += 1
+        while index < len(self.podQueue) and pod.remainWork == self.podQueue[index].remainWork:
+            if pod.prio > self.podQueue[index].prio:
+                break
+            index += 1
+        
+        self.podQueue.insert(index, pod)
 
-        if addloc == -1:
-            self.podQueue.append(pod)
+    def schedulePods(self, myNodeList: NodeList) -> Tuple[list[Pod],list[Pod]]:
+        if len(self.podQueue) == 0:
+            return [], []
 
-    def schedulePods(self, myNodeList: NodeList) -> list[Pod]:
-        # Not sure how this going to work yet
         scheduledPods = []
-        while len(self.podQueue) > 0:
+        preemptedPods = []
+        notScheduledPods = []
+        smallestWork = self.podQueue[0].remainWork
+        while len(self.podQueue) > 0 and self.podQueue[0].remainWork == smallestWork:
+            # Try to schedule all the pods of current time
             currPod = self.podQueue.popleft()
             matchedNodes = myNodeList.getMatch(currPod, 1)
             if len(matchedNodes) > 0: # At least one Node can run this pod
+                # Not sure how this going to work yet. TODO FIND A BETTER WAY TO PICK CHOSEN NODE
                 chosenNode = matchedNodes[0] # There is only one node here lol
                 if global_.qFlag:
                     print("Matched Pod [%s] with Node [%s]" % (currPod.name, chosenNode.name))
@@ -179,16 +189,31 @@ class SRTF(Scheduler): # Shortest Remaining Time First
                 currPod.node = chosenNode # Link node to pod
                 scheduledPods.append(currPod)
             else:
-                # No node can run this pod, we just wait and try schedule this pod again later
-                self.podQueue.appendleft(currPod)
-                if global_.qFlag:
-                    print("Unable to Match Pod [%s] with Nodes" % (currPod.name))
-                break
+                # No node can run this pod
+                if self.isPreemptive: # If preemptive, then try removing a pod
+                    preemptedPod = self.preemptPod(currPod)
+                    if preemptedPod != None:
+                        preemptedPods.append(preemptedPod)
+                        if global_.qFlag:
+                            print("Pod [%s] w/ Prio [%d] is preempted by Pod [%s] w/ Prio [%d]" \
+                                % (preemptedPod.name, preemptedPod.prio, currPod.name, currPod.prio))
+                    else:
+                        if global_.qFlag:
+                            print("Unable to Preempt Pods for Pod [%s]" % (currPod.name))
+                    # Put pod back into queue and wait ...
+                    notScheduledPods.append(currPod)
+                else: # Otherwise, put pod back into queue and wait ...
+                    notScheduledPods.append(currPod)
+                    if global_.qFlag:
+                        print("Unable to Match Pod [%s] with Nodes" % (currPod.name))
+    
+        while len(notScheduledPods) > 0:
+            self.addToQueue(notScheduledPods.pop())
 
-        return scheduledPods
+        return scheduledPods, preemptedPods
 
     def __repr__(self) -> str:
-        return "SRTF"
+        return "Scheduler: SRTF " + super().__repr__()
 
 class SRF(Scheduler): # Smallest Resource First
     def __init__(self) -> None:
