@@ -95,17 +95,17 @@ def parseSchedulerInfo(arg: str) -> Scheduler:
     except:
         preemptive = False
 
-    maxPrio = 4
-    try:
-        maxPrio = int(arg[2])
-    except:
-        maxPrio = 4
-        
     quantum = 10000
     try:
-        quantum = int(arg[3])
+        quantum = int(arg[2])
     except:
         quantum = 10000
+
+    maxPrio = 4
+    try:
+        maxPrio = int(arg[3])
+    except:
+        maxPrio = 4
 
     if arg[0] == "FCFS":
         myScheduler = FCFS(preemptive=preemptive)
@@ -114,12 +114,7 @@ def parseSchedulerInfo(arg: str) -> Scheduler:
     elif arg[0] == "SRF":
         myScheduler = SRF()
     elif arg[0] == "RR": # RR:quantum
-        if len(arg) == 1:
-            myScheduler = RR(10)
-        elif len(arg) == 2:
-            myScheduler = RR(arg[1])
-        else:
-            print("RR sched should be RR:quantum")
+        myScheduler = RR(quantum=quantum, preemptive=preemptive)
     elif arg[0] == "PRIO": # PRIO:quantum:maxprio
         if len(arg) == 1:
             myScheduler = PRIO(4, 10)
@@ -270,7 +265,8 @@ def simulate(myEventQueue: EventQueue, myScheduler: Scheduler, myNodeList: NodeL
             # Update state info
             pod.state = State.RUN
             pod.stateTS = currentTime
-            pod.execStartTime = currentTime
+            if pod.execStartTime == None:
+                pod.execStartTime = currentTime
             pod.totalWaitTime += timeInPrevState
             myScheduler.addToRunList(pod)
 
@@ -331,8 +327,8 @@ def simulate(myEventQueue: EventQueue, myScheduler: Scheduler, myNodeList: NodeL
                 # There is a pod to preempt, create a new event
                 pod = preemptedPods.pop()
                 futureEvent = myEventQueue.getEventByPod(pod)
-                if futureEvent.timeStamp > currentTime+30:
-                    remainingTime = futureEvent.timeStamp - currentTime+30
+                if futureEvent.timeStamp > (currentTime + 30):
+                    remainingTime = futureEvent.timeStamp - (currentTime + 30)
                     pod.remainWork += remainingTime # Restore the amount of work didn't get to do
                     myEventQueue.removeEvent(futureEvent)
                     futureEvent = None

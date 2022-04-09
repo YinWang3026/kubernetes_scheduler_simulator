@@ -32,7 +32,7 @@ class Pod:
         self.dynamicPrio = prio # Current prio
 
         # Benchmarking values
-        self.execStartTime = 0
+        self.execStartTime = None
         self.finishTime = 0
         self.totalWaitTime = 0
     

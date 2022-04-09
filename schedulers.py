@@ -83,7 +83,7 @@ class Scheduler:
              % (self.quantum, self.maxprio, self.isPreemptive)
         
 class FCFS(Scheduler): # First Come First Served
-    def __init__(self, preemptive: bool = False) -> None:
+    def __init__(self, preemptive: bool) -> None:
         # Does not care about quantum or maxprio, leaving as some large default
         super().__init__(preemptive=preemptive)
 
@@ -236,35 +236,11 @@ class SRF(Scheduler): # Smallest Resource First
     def __repr__(self) -> str:
         return "SRF"
 
-class RR(Scheduler): # Round Robin
-    def __init__(self, quantum: int) -> None:
-        super().__init__(quantum=quantum)
-
-    def addToQueue(self, pod: Pod) -> None:
-        self.podQueue.append(pod)
-
-    def schedulePods(self, myNodeList: NodeList) -> list[Pod]:
-        # Not sure how this going to work yet
-        scheduledPods = []
-        while len(self.podQueue) > 0:
-            currPod = self.podQueue.popleft()
-            matchedNodes = myNodeList.getMatch(currPod, 1)
-            if len(matchedNodes) > 0: # At least one Node can run this pod
-                chosenNode = matchedNodes[0] # There is only one node here lol
-                if global_.qFlag:
-                    print("Matched Pod [%s] with Node [%s]" % (currPod.name, chosenNode.name))
-
-                chosenNode.addPod(currPod) # Take the resource now, so that no other nodes can take the resource
-                currPod.node = chosenNode # Link node to pod
-                scheduledPods.append(currPod)
-            else:
-                # No node can run this pod, we just wait and try schedule this pod again later
-                self.podQueue.appendleft(currPod)
-                if global_.qFlag:
-                    print("Unable to Match Pod [%s] with Nodes" % (currPod.name))
-                break
-
-        return scheduledPods
+class RR(FCFS): # Round Robin
+    def __init__(self, quantum: int, preemptive: bool) -> None:
+        # FCFS with a quantum lol
+        super().__init__(preemptive=preemptive)
+        self.quantum = quantum
 
     def __repr__(self) -> str:
         return "Scheduler: RR " + super().__repr__()
