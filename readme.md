@@ -198,11 +198,19 @@ Time [0] Adding Pod [PodA] to Node [NodeC]
         After CPU: 3, GPU: 10, RAM: 37
 Matching Pod [PodB] with nodes
 Unable to Preempt Pods for Pod [PodB]
-RunningPods[0]:
-currentTime: 0, podName: PodA, timeInPrevState: 0, from: State.WAIT to: State.RUN
-SchedQ[3]:PodC PodD PodB
 Matching Pod [PodC] with nodes
 Unable to Preempt Pods for Pod [PodC]
+Matching Pod [PodD] with nodes
+Unable to Preempt Pods for Pod [PodD]
+RunningPods[0]:
+currentTime: 0, podName: PodA, timeInPrevState: 0, from: State.WAIT to: State.RUN
+SchedQ[3]:PodD PodC PodB
+Matching Pod [PodD] with nodes
+Unable to Preempt Pods for Pod [PodD]
+Matching Pod [PodC] with nodes
+Unable to Preempt Pods for Pod [PodC]
+Matching Pod [PodB] with nodes
+Unable to Preempt Pods for Pod [PodB]
 RunningPods[1]:PodA
 currentTime: 1, podName: PodE, timeInPrevState: 0, from: State.CREATED to: State.WAIT
 RunningPods[1]:PodA
@@ -211,7 +219,11 @@ RunningPods[1]:PodA
 currentTime: 1, podName: PodG, timeInPrevState: 0, from: State.CREATED to: State.WAIT
 RunningPods[1]:PodA
 currentTime: 1, podName: PodH, timeInPrevState: 0, from: State.CREATED to: State.WAIT
-SchedQ[7]:PodD PodB PodC PodE PodF PodG PodH
+SchedQ[7]:PodB PodC PodD PodH PodE PodF PodG
+Matching Pod [PodB] with nodes
+Unable to Preempt Pods for Pod [PodB]
+Matching Pod [PodC] with nodes
+Unable to Preempt Pods for Pod [PodC]
 Matching Pod [PodD] with nodes
 Unable to Preempt Pods for Pod [PodD]
 RunningPods[1]:PodA
@@ -219,144 +231,162 @@ currentTime: 452, podName: PodA, timeInPrevState: 452, from: State.RUN to: State
 Time [452] Removing Pod [PodA] from Node [NodeC]
         Before CPU: 3, GPU: 10, RAM: 37
         After CPU: 15, GPU: 31, RAM: 97
-SchedQ[7]:PodB PodC PodD PodE PodF PodG PodH
-Matching Pod [PodB] with nodes
-Matched Pod [PodB] with Node [NodeC]
-Time [452] Adding Pod [PodB] to Node [NodeC]
+SchedQ[7]:PodD PodC PodB PodH PodE PodF PodG
+Matching Pod [PodD] with nodes
+Matched Pod [PodD] with Node [NodeC]
+Time [452] Adding Pod [PodD] to Node [NodeC]
         Before CPU: 15, GPU: 31, RAM: 97
         After CPU: 3, GPU: 10, RAM: 37
 Matching Pod [PodC] with nodes
 Unable to Preempt Pods for Pod [PodC]
+Matching Pod [PodB] with nodes
+Unable to Preempt Pods for Pod [PodB]
 RunningPods[0]:
-currentTime: 452, podName: PodB, timeInPrevState: 452, from: State.WAIT to: State.RUN
-SchedQ[6]:PodD PodC PodE PodF PodG PodH
-Matching Pod [PodD] with nodes
-Unable to Preempt Pods for Pod [PodD]
-RunningPods[1]:PodB
-currentTime: 904, podName: PodB, timeInPrevState: 452, from: State.RUN to: State.TERM
-Time [904] Removing Pod [PodB] from Node [NodeC]
+currentTime: 452, podName: PodD, timeInPrevState: 452, from: State.WAIT to: State.RUN
+SchedQ[6]:PodB PodC PodH PodE PodF PodG
+Matching Pod [PodB] with nodes
+Unable to Preempt Pods for Pod [PodB]
+Matching Pod [PodC] with nodes
+Unable to Preempt Pods for Pod [PodC]
+RunningPods[1]:PodD
+currentTime: 904, podName: PodD, timeInPrevState: 452, from: State.RUN to: State.TERM
+Time [904] Removing Pod [PodD] from Node [NodeC]
         Before CPU: 3, GPU: 10, RAM: 37
         After CPU: 15, GPU: 31, RAM: 97
-SchedQ[6]:PodC PodD PodE PodF PodG PodH
+SchedQ[6]:PodC PodB PodH PodE PodF PodG
 Matching Pod [PodC] with nodes
 Matched Pod [PodC] with Node [NodeC]
 Time [904] Adding Pod [PodC] to Node [NodeC]
         Before CPU: 15, GPU: 31, RAM: 97
         After CPU: 3, GPU: 10, RAM: 37
-Matching Pod [PodD] with nodes
-Unable to Preempt Pods for Pod [PodD]
+Matching Pod [PodB] with nodes
+Unable to Preempt Pods for Pod [PodB]
 RunningPods[0]:
 currentTime: 904, podName: PodC, timeInPrevState: 904, from: State.WAIT to: State.RUN
-SchedQ[5]:PodD PodE PodF PodG PodH
-Matching Pod [PodD] with nodes
-Unable to Preempt Pods for Pod [PodD]
+SchedQ[5]:PodB PodH PodE PodF PodG
+Matching Pod [PodB] with nodes
+Unable to Preempt Pods for Pod [PodB]
 RunningPods[1]:PodC
 currentTime: 1356, podName: PodC, timeInPrevState: 452, from: State.RUN to: State.TERM
 Time [1356] Removing Pod [PodC] from Node [NodeC]
         Before CPU: 3, GPU: 10, RAM: 37
         After CPU: 15, GPU: 31, RAM: 97
-SchedQ[5]:PodD PodE PodF PodG PodH
-Matching Pod [PodD] with nodes
-Matched Pod [PodD] with Node [NodeC]
-Time [1356] Adding Pod [PodD] to Node [NodeC]
+SchedQ[5]:PodB PodH PodE PodF PodG
+Matching Pod [PodB] with nodes
+Matched Pod [PodB] with Node [NodeC]
+Time [1356] Adding Pod [PodB] to Node [NodeC]
         Before CPU: 15, GPU: 31, RAM: 97
         After CPU: 3, GPU: 10, RAM: 37
+RunningPods[0]:
+currentTime: 1356, podName: PodB, timeInPrevState: 1356, from: State.WAIT to: State.RUN
+SchedQ[4]:PodH PodE PodF PodG
+Matching Pod [PodH] with nodes
+Pod [PodB] w/ Prio [2] is preempted by Pod [PodH] w/ Prio [4]
+Matching Pod [PodE] with nodes
+Unable to Preempt Pods for Pod [PodE]
+Matching Pod [PodF] with nodes
+Unable to Preempt Pods for Pod [PodF]
+Matching Pod [PodG] with nodes
+Unable to Preempt Pods for Pod [PodG]
+RunningPods[1]:PodB
+currentTime: 1386, podName: PodB, timeInPrevState: 30, from: State.RUN to: State.PREEMPT
+Time [1386] Removing Pod [PodB] from Node [NodeC]
+        Before CPU: 3, GPU: 10, RAM: 37
+        After CPU: 15, GPU: 31, RAM: 97
+SchedQ[5]:PodH PodG PodF PodE PodB
+Matching Pod [PodH] with nodes
+Matched Pod [PodH] with Node [NodeC]
+Time [1386] Adding Pod [PodH] to Node [NodeC]
+        Before CPU: 15, GPU: 31, RAM: 97
+        After CPU: 3, GPU: 10, RAM: 37
+Matching Pod [PodG] with nodes
+Unable to Preempt Pods for Pod [PodG]
+Matching Pod [PodF] with nodes
+Unable to Preempt Pods for Pod [PodF]
 Matching Pod [PodE] with nodes
 Unable to Preempt Pods for Pod [PodE]
 RunningPods[0]:
-currentTime: 1356, podName: PodD, timeInPrevState: 1356, from: State.WAIT to: State.RUN
-SchedQ[4]:PodF PodG PodH PodE
+currentTime: 1386, podName: PodH, timeInPrevState: 1385, from: State.WAIT to: State.RUN
+SchedQ[4]:PodE PodF PodG PodB
+Matching Pod [PodE] with nodes
+Unable to Preempt Pods for Pod [PodE]
 Matching Pod [PodF] with nodes
-Pod [PodD] w/ Prio [2] is preempted by Pod [PodF] w/ Prio [3]
-RunningPods[1]:PodD
-currentTime: 1386, podName: PodD, timeInPrevState: 30, from: State.RUN to: State.PREEMPT
-Time [1386] Removing Pod [PodD] from Node [NodeC]
+Unable to Preempt Pods for Pod [PodF]
+Matching Pod [PodG] with nodes
+Unable to Preempt Pods for Pod [PodG]
+RunningPods[1]:PodH
+currentTime: 1838, podName: PodH, timeInPrevState: 452, from: State.RUN to: State.TERM
+Time [1838] Removing Pod [PodH] from Node [NodeC]
         Before CPU: 3, GPU: 10, RAM: 37
         After CPU: 15, GPU: 31, RAM: 97
-SchedQ[5]:PodG PodH PodE PodF PodD
+SchedQ[4]:PodG PodF PodE PodB
 Matching Pod [PodG] with nodes
 Matched Pod [PodG] with Node [NodeC]
-Time [1386] Adding Pod [PodG] to Node [NodeC]
+Time [1838] Adding Pod [PodG] to Node [NodeC]
         Before CPU: 15, GPU: 31, RAM: 97
         After CPU: 3, GPU: 10, RAM: 37
-Matching Pod [PodH] with nodes
-Unable to Preempt Pods for Pod [PodH]
-RunningPods[0]:
-currentTime: 1386, podName: PodG, timeInPrevState: 1385, from: State.WAIT to: State.RUN
-SchedQ[4]:PodE PodF PodH PodD
+Matching Pod [PodF] with nodes
+Unable to Preempt Pods for Pod [PodF]
 Matching Pod [PodE] with nodes
 Unable to Preempt Pods for Pod [PodE]
+RunningPods[0]:
+currentTime: 1838, podName: PodG, timeInPrevState: 1837, from: State.WAIT to: State.RUN
+SchedQ[3]:PodE PodF PodB
+Matching Pod [PodE] with nodes
+Unable to Preempt Pods for Pod [PodE]
+Matching Pod [PodF] with nodes
+Unable to Preempt Pods for Pod [PodF]
 RunningPods[1]:PodG
-currentTime: 1838, podName: PodG, timeInPrevState: 452, from: State.RUN to: State.TERM
-Time [1838] Removing Pod [PodG] from Node [NodeC]
+currentTime: 2290, podName: PodG, timeInPrevState: 452, from: State.RUN to: State.TERM
+Time [2290] Removing Pod [PodG] from Node [NodeC]
         Before CPU: 3, GPU: 10, RAM: 37
         After CPU: 15, GPU: 31, RAM: 97
-SchedQ[4]:PodF PodH PodE PodD
+SchedQ[3]:PodF PodE PodB
 Matching Pod [PodF] with nodes
 Matched Pod [PodF] with Node [NodeC]
-Time [1838] Adding Pod [PodF] to Node [NodeC]
+Time [2290] Adding Pod [PodF] to Node [NodeC]
         Before CPU: 15, GPU: 31, RAM: 97
         After CPU: 3, GPU: 10, RAM: 37
-Matching Pod [PodH] with nodes
-Unable to Preempt Pods for Pod [PodH]
+Matching Pod [PodE] with nodes
+Unable to Preempt Pods for Pod [PodE]
 RunningPods[0]:
-currentTime: 1838, podName: PodF, timeInPrevState: 1837, from: State.WAIT to: State.RUN
-SchedQ[3]:PodE PodH PodD
+currentTime: 2290, podName: PodF, timeInPrevState: 2289, from: State.WAIT to: State.RUN
+SchedQ[2]:PodE PodB
 Matching Pod [PodE] with nodes
 Unable to Preempt Pods for Pod [PodE]
 RunningPods[1]:PodF
-currentTime: 2290, podName: PodF, timeInPrevState: 452, from: State.RUN to: State.TERM
-Time [2290] Removing Pod [PodF] from Node [NodeC]
+currentTime: 2742, podName: PodF, timeInPrevState: 452, from: State.RUN to: State.TERM
+Time [2742] Removing Pod [PodF] from Node [NodeC]
         Before CPU: 3, GPU: 10, RAM: 37
         After CPU: 15, GPU: 31, RAM: 97
-SchedQ[3]:PodH PodE PodD
-Matching Pod [PodH] with nodes
-Matched Pod [PodH] with Node [NodeC]
-Time [2290] Adding Pod [PodH] to Node [NodeC]
-        Before CPU: 15, GPU: 31, RAM: 97
-        After CPU: 3, GPU: 10, RAM: 37
-Matching Pod [PodE] with nodes
-Unable to Preempt Pods for Pod [PodE]
-RunningPods[0]:
-currentTime: 2290, podName: PodH, timeInPrevState: 2289, from: State.WAIT to: State.RUN
-SchedQ[2]:PodE PodD
-Matching Pod [PodE] with nodes
-Unable to Preempt Pods for Pod [PodE]
-RunningPods[1]:PodH
-currentTime: 2742, podName: PodH, timeInPrevState: 452, from: State.RUN to: State.TERM
-Time [2742] Removing Pod [PodH] from Node [NodeC]
-        Before CPU: 3, GPU: 10, RAM: 37
-        After CPU: 15, GPU: 31, RAM: 97
-SchedQ[2]:PodE PodD
+SchedQ[2]:PodE PodB
 Matching Pod [PodE] with nodes
 Matched Pod [PodE] with Node [NodeC]
 Time [2742] Adding Pod [PodE] to Node [NodeC]
         Before CPU: 15, GPU: 31, RAM: 97
         After CPU: 3, GPU: 10, RAM: 37
-Matching Pod [PodD] with nodes
-Unable to Preempt Pods for Pod [PodD]
 RunningPods[0]:
 currentTime: 2742, podName: PodE, timeInPrevState: 2741, from: State.WAIT to: State.RUN
-SchedQ[1]:PodD
-Matching Pod [PodD] with nodes
-Unable to Preempt Pods for Pod [PodD]
+SchedQ[1]:PodB
+Matching Pod [PodB] with nodes
+Unable to Preempt Pods for Pod [PodB]
 RunningPods[1]:PodE
 currentTime: 3194, podName: PodE, timeInPrevState: 452, from: State.RUN to: State.TERM
 Time [3194] Removing Pod [PodE] from Node [NodeC]
         Before CPU: 3, GPU: 10, RAM: 37
         After CPU: 15, GPU: 31, RAM: 97
-SchedQ[1]:PodD
-Matching Pod [PodD] with nodes
-Matched Pod [PodD] with Node [NodeC]
-Time [3194] Adding Pod [PodD] to Node [NodeC]
+SchedQ[1]:PodB
+Matching Pod [PodB] with nodes
+Matched Pod [PodB] with Node [NodeC]
+Time [3194] Adding Pod [PodB] to Node [NodeC]
         Before CPU: 15, GPU: 31, RAM: 97
         After CPU: 3, GPU: 10, RAM: 37
 RunningPods[0]:
-currentTime: 3194, podName: PodD, timeInPrevState: 1808, from: State.PREEMPT to: State.RUN
+currentTime: 3194, podName: PodB, timeInPrevState: 1808, from: State.PREEMPT to: State.RUN
 SchedQ[0]:
-RunningPods[1]:PodD
-currentTime: 3676, podName: PodD, timeInPrevState: 482, from: State.RUN to: State.TERM
-Time [3676] Removing Pod [PodD] from Node [NodeC]
+RunningPods[1]:PodB
+currentTime: 3676, podName: PodB, timeInPrevState: 482, from: State.RUN to: State.TERM
+Time [3676] Removing Pod [PodB] from Node [NodeC]
         Before CPU: 3, GPU: 10, RAM: 37
         After CPU: 15, GPU: 31, RAM: 97
 SchedQ[0]:
@@ -367,14 +397,14 @@ Pods unable to schedule: SchedQ[0]:
 
 Pod List Benchmarks:
         Name: PodA, ExecStartTime: 0, FinishTime: 452, TotalWaitTime: 0
-        Name: PodB, ExecStartTime: 452, FinishTime: 904, TotalWaitTime: 452
+        Name: PodB, ExecStartTime: 3194, FinishTime: 3676, TotalWaitTime: 3164
         Name: PodC, ExecStartTime: 904, FinishTime: 1356, TotalWaitTime: 904
-        Name: PodD, ExecStartTime: 3194, FinishTime: 3676, TotalWaitTime: 3164
+        Name: PodD, ExecStartTime: 452, FinishTime: 904, TotalWaitTime: 452
         Name: PodE, ExecStartTime: 2742, FinishTime: 3194, TotalWaitTime: 2741
-        Name: PodF, ExecStartTime: 1838, FinishTime: 2290, TotalWaitTime: 1837
-        Name: PodG, ExecStartTime: 1386, FinishTime: 1838, TotalWaitTime: 1385
-        Name: PodH, ExecStartTime: 2290, FinishTime: 2742, TotalWaitTime: 2289
+        Name: PodF, ExecStartTime: 2290, FinishTime: 2742, TotalWaitTime: 2289
+        Name: PodG, ExecStartTime: 1838, FinishTime: 2290, TotalWaitTime: 1837
+        Name: PodH, ExecStartTime: 1386, FinishTime: 1838, TotalWaitTime: 1385
 
 Usage Log:
-        Node[NodeC] Usage Log: (0, 452, 'PodA', 12, 21, 60) (452, 904, 'PodB', 12, 21, 60) (904, 1356, 'PodC', 12, 21, 60) (1356, 1386, 'PodD', 12, 21, 60) (1386, 1838, 'PodG', 12, 21, 60) (1838, 2290, 'PodF', 12, 21, 60) (2290, 2742, 'PodH', 12, 21, 60) (2742, 3194, 'PodE', 12, 21, 60) (3194, 3676, 'PodD', 12, 21, 60)
+        Node[NodeC] Usage Log: (0, 452, 'PodA', 12, 21, 60) (452, 904, 'PodD', 12, 21, 60) (904, 1356, 'PodC', 12, 21, 60) (1356, 1386, 'PodB', 12, 21, 60) (1386, 1838, 'PodH', 12, 21, 60) (1838, 2290, 'PodG', 12, 21, 60) (2290, 2742, 'PodF', 12, 21, 60) (2742, 3194, 'PodE', 12, 21, 60) (3194, 3676, 'PodB', 12, 21, 60)
 ```

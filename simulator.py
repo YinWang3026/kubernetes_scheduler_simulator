@@ -334,7 +334,6 @@ def simulate(myEventQueue: EventQueue, myScheduler: Scheduler, myNodeList: NodeL
                 if futureEvent.timeStamp > currentTime+30:
                     remainingTime = futureEvent.timeStamp - currentTime+30
                     pod.remainWork += remainingTime # Restore the amount of work didn't get to do
-                    pod.preempted = True
                     myEventQueue.removeEvent(futureEvent)
                     futureEvent = None
                     myEventQueue.putEvent(Event(currentTime+30, pod, Transition.TO_PREEMPT)) # Has 30 sec to run before termination

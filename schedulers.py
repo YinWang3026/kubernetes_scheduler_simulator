@@ -53,6 +53,7 @@ class Scheduler:
                 and currPod.gpu + currPod.node.curGpu >= highPrioPod.gpu \
                 and currPod.ram + currPod.node.curRam >= highPrioPod.ram \
                 and currPod.preempted == False:
+                currPod.preempted = True
                 return currPod
         return None
     
@@ -90,7 +91,7 @@ class FCFS(Scheduler): # First Come First Served
         # Queue needs to be sorted by Pod.stateTS and Pod.prio
         index = 0
         while index < len(self.podQueue):
-            if pod.stateTS < self.podQueue[index].stateTS:
+            if pod.stateTS <= self.podQueue[index].stateTS:
                 break
             index += 1
         while index < len(self.podQueue) and pod.stateTS == self.podQueue[index].stateTS:
@@ -101,9 +102,15 @@ class FCFS(Scheduler): # First Come First Served
         self.podQueue.insert(index, pod)
 
     def schedulePods(self, myNodeList: NodeList) -> Tuple[list[Pod],list[Pod]]:
+        if len(self.podQueue) == 0:
+            return [], []
+
         scheduledPods = []
         preemptedPods = []
-        while len(self.podQueue) > 0:
+        notScheduledPods = []
+        currentTime = self.podQueue[0].stateTS
+        while len(self.podQueue) > 0 and self.podQueue[0].stateTS == currentTime:
+            # Try to schedule all the pods of current time
             currPod = self.podQueue.popleft()
             matchedNodes = myNodeList.getMatch(currPod, 1)
             if len(matchedNodes) > 0: # At least one Node can run this pod
@@ -128,12 +135,14 @@ class FCFS(Scheduler): # First Come First Served
                         if global_.qFlag:
                             print("Unable to Preempt Pods for Pod [%s]" % (currPod.name))
                     # Put pod back into queue and wait ...
-                    self.addToQueue(currPod)
+                    notScheduledPods.append(currPod)
                 else: # Otherwise, put pod back into queue and wait ...
-                    self.addToQueue(currPod)
+                    notScheduledPods.append(currPod)
                     if global_.qFlag:
                         print("Unable to Match Pod [%s] with Nodes" % (currPod.name))
-                break
+    
+        while len(notScheduledPods) > 0:
+            self.addToQueue(notScheduledPods.pop())
 
         return scheduledPods, preemptedPods
 
