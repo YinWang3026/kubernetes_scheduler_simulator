@@ -1,0 +1,2 @@
+nodeName cpu gpu ram
+NodeC 15 31 97

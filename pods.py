@@ -27,6 +27,7 @@ class Pod:
         # State information
         self.state = state # Current state
         self.stateTS = arrivalTime # Time that entered current state
+        self.preempted = False # Did I get preempted signaled?
         self.remainWork = work # remaining time to finish work
         self.dynamicPrio = prio # Current prio
 

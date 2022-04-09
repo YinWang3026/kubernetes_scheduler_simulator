@@ -27,7 +27,7 @@ class Node:
         # self.podSet = set() # For O(1) remove and add, but can use other data struct if needed
     
     def addPod(self, pod: Pod) -> None:
-        if global_.tFlag:
+        if global_.zFlag:
             print("Time [%d] Adding Pod [%s] to Node [%s]\n\tBefore CPU: %d, GPU: %d, RAM: %d" \
                 % (self.currentTime, pod.name, self.name, self.curCpu, self.curGpu, self.curRam))
         self.curCpu -= pod.cpu
@@ -44,12 +44,12 @@ class Node:
             exit(1)
 
         self.admission[pod.name] = self.currentTime
-        if global_.tFlag:
+        if global_.zFlag:
             print("\tAfter CPU: %d, GPU: %d, RAM: %d" \
                 % (self.curCpu, self.curGpu, self.curRam))
 
     def removePod(self, pod: Pod) -> None:
-        if global_.tFlag:
+        if global_.zFlag:
             print("Time [%d] Removing Pod [%s] from Node [%s]\n\tBefore CPU: %d, GPU: %d, RAM: %d" \
                 % (self.currentTime, pod.name, self.name, self.curCpu, self.curGpu, self.curRam))
         
@@ -67,7 +67,7 @@ class Node:
         
         del self.admission[pod.name]
 
-        if global_.tFlag:
+        if global_.zFlag:
             print("\tAfter CPU: %d, GPU: %d, RAM: %d" \
                 % (self.curCpu, self.curGpu, self.curRam))
     
@@ -86,9 +86,9 @@ class Node:
         return s
     
     def getUsageLogStr(self) -> str:
-        s = "Node[%s] Usage Log: " % (self.name)
+        s = "Node[%s] Usage Log:" % (self.name)
         for i in self.log:
-            s += "\t" + str(i)
+            s += " " + str(i)
         return s
 
 class NodeList:
@@ -108,7 +108,8 @@ class NodeList:
         # Default policy, return the first n nodes that has enough resource to run this pod
         matchedNodes = []
         count = 0
-
+        if global_.zFlag:
+            print("Matching Pod [%s] with nodes" % (pod.name))
         for i in self.nodes:
             if i.curCpu >= pod.cpu and i.curGpu >= pod.gpu and i.curRam >= pod.ram:
                 matchedNodes.append(i)

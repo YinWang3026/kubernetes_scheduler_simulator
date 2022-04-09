@@ -142,7 +142,7 @@ def main(argv):
     myEventQueue = EventQueue()
 
     try:
-        opts, args = getopt.getopt(argv,"hvtqp:n:s:d:",["help, pfile=, nfile=, sched=, nsched="])
+        opts, args = getopt.getopt(argv,"hvtqzp:n:s:d:",["help, pfile=, nfile=, sched=, nsched="])
         # getopt.getopt(args, options, [long_options])
         # ":" indicates that an argument is needed, otherwise just an option, like -h
     except getopt.GetoptError:
@@ -167,6 +167,8 @@ def main(argv):
             global_.tFlag = True
         elif opt in ("-q"):
             global_.qFlag = True
+        elif opt in ("-z"):
+            global_.zFlag = True
     
     if pfile == "":
         print('Missing pod file, exiting')
@@ -291,6 +293,7 @@ def simulate(myEventQueue: EventQueue, myScheduler: Scheduler, myNodeList: NodeL
             pod.state = State.PREEMPT
             pod.stateTS = currentTime
             pod.dynamicPrio -= 1
+            pod.preempted = False
             myScheduler.rmFromRunList(pod)
             # Return resouce to node
             node = pod.node
@@ -325,14 +328,15 @@ def simulate(myEventQueue: EventQueue, myScheduler: Scheduler, myNodeList: NodeL
                 myEventQueue.putEvent(Event(currentTime, scheduledPods.pop(), Transition.TO_RUN))
             while len(preemptedPods) > 0:
                 # There is a pod to preempt, create a new event
-                p = preemptedPods.pop()
-                futureEvent = myEventQueue.getEventByPod(p)
+                pod = preemptedPods.pop()
+                futureEvent = myEventQueue.getEventByPod(pod)
                 if futureEvent.timeStamp > currentTime+30:
                     remainingTime = futureEvent.timeStamp - currentTime+30
-                    p.remainWork += remainingTime # Restore the amount of work didn't get to do
+                    pod.remainWork += remainingTime # Restore the amount of work didn't get to do
+                    pod.preempted = True
                     myEventQueue.removeEvent(futureEvent)
                     futureEvent = None
-                    myEventQueue.putEvent(Event(currentTime+30, p, Transition.TO_PREEMPT)) # Has 30 sec to run before termination
+                    myEventQueue.putEvent(Event(currentTime+30, pod, Transition.TO_PREEMPT)) # Has 30 sec to run before termination
 
         # Get the next event
         event = myEventQueue.getEvent()

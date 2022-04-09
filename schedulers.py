@@ -45,16 +45,16 @@ class Scheduler:
         self.runningPods.insert(index, pod)
     
     def preemptPod(self, highPrioPod: Pod) -> Pod:
-        index = 0
-        while index < len(self.runningPods):
-            currPod = self.runningPods[index]
+        if len(self.runningPods) == 0:
+            return None
+        for currPod in self.runningPods:
             if currPod.dynamicPrio < highPrioPod.dynamicPrio \
                 and currPod.cpu + currPod.node.curCpu >= highPrioPod.cpu \
                 and currPod.gpu + currPod.node.curGpu >= highPrioPod.gpu \
-                and currPod.ram + currPod.node.curRam >= highPrioPod.ram:
-                break
-            index += 1
-        return self.runningPods.pop(index)
+                and currPod.ram + currPod.node.curRam >= highPrioPod.ram \
+                and currPod.preempted == False:
+                return currPod
+        return None
     
     def getQueueLength(self) -> int:
         return len(self.podQueue)
@@ -87,6 +87,7 @@ class FCFS(Scheduler): # First Come First Served
         super().__init__(preemptive=preemptive)
 
     def addPod(self, pod: Pod) -> None:
+        # Queue needs to be sorted by Pod.stateTS and Pod.prio
         self.podQueue.append(pod)
 
     def schedulePods(self, myNodeList: NodeList) -> Tuple[list[Pod],list[Pod]]:
@@ -108,10 +109,16 @@ class FCFS(Scheduler): # First Come First Served
                 # No node can run this pod
                 if self.isPreemptive: # If preemptive, then try removing a pod
                     preemptedPod = self.preemptPod(currPod)
-                    preemptedPods.append(preemptedPod)
-                    if global_.qFlag:
-                        print("Pod [%s] w/ Prio [%d] is preempted by Pod [%s] w/ Prio [%d]" \
-                            % (preemptedPod.name, preemptedPod.prio, currPod.name, currPod.prio))
+                    if preemptedPod != None:
+                        preemptedPods.append(preemptedPod)
+                        if global_.qFlag:
+                            print("Pod [%s] w/ Prio [%d] is preempted by Pod [%s] w/ Prio [%d]" \
+                                % (preemptedPod.name, preemptedPod.prio, currPod.name, currPod.prio))
+                    else:
+                        if global_.qFlag:
+                            print("Unable to Preempt Pods for Pod [%s]" % (currPod.name))
+                    # Put pod back into queue and wait ...
+                    self.podQueue.appendleft(currPod)
                 else: # Otherwise, put pod back into queue and wait ...
                     self.podQueue.appendleft(currPod)
                     if global_.qFlag:
