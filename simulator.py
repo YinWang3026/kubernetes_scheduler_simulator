@@ -107,21 +107,17 @@ def parseSchedulerInfo(arg: str) -> Scheduler:
     except:
         maxPrio = 4
 
-    if arg[0] == "FCFS":
+    if arg[0] == "FCFS": # FCFS:preemptive
         myScheduler = FCFS(preemptive=preemptive)
-    elif arg[0] == "SRTF":
+    elif arg[0] == "SRTF": # SRTF:preemptive
         myScheduler = SRTF(preemptive=preemptive)
-    elif arg[0] == "SRF":
+    elif arg[0] == "SRF": # SRF:preemptive
         myScheduler = SRF(preemptive=preemptive)
-    elif arg[0] == "RR": # RR:quantum
+    elif arg[0] == "RR": # RR:preemptive:quantum
         myScheduler = RR(quantum=quantum, preemptive=preemptive)
-    elif arg[0] == "PRIO": # PRIO:quantum:maxprio
-        if len(arg) == 1:
-            myScheduler = PRIO(4, 10)
-        elif len(arg) == 3:
-            myScheduler = PRIO(arg[1], arg[2])
-        else:
-            print("PRIO sched should be PRIO:quantum:maxprio")
+    elif arg[0] == "PRIO": # PRIO:preemptive:quantum:maxprio
+        myScheduler = PRIO(quantum=quantum, preemptive=preemptive, maxprio=maxPrio)
+
     # elif arg == "DRF":
     #     myScheduler = PRIO()
     # elif arg == "Lottery":
