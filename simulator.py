@@ -81,8 +81,9 @@ def userCallHelper():
     print('-s or --sched for pod scheduler')
     print('-d or --nsched for node scheduler')
     print('-v for general debugging info')
-    print('-q for printing scheduler queue')
+    print('-q for scheduler debugging info')
     print('-t for showing simulation traces')
+    print('-z for showing simulation traces')
 
 def parseSchedulerInfo(arg: str) -> Scheduler:
     myScheduler = None
