@@ -1,6 +1,5 @@
 from collections import deque
 from enum import Enum, auto
-from random import randint
 import sys, getopt
 
 import global_
@@ -61,9 +60,9 @@ class EventQueue:
 
         del self.queue[i]
 
-    def getEventByPod(self, pod: Pod) -> int:
-        for i in range(0, len(self.queue)):
-            if self.queue[i].pod.name == pod.name:
+    def getEventByPod(self, pod: Pod) -> Event:
+        for i in self.queue:
+            if i.pod.name == pod.name:
                 return i
         
         return None
@@ -82,8 +81,49 @@ def userCallHelper():
     print('-s or --sched for pod scheduler')
     print('-d or --nsched for node scheduler')
     print('-v for general debugging info')
-    print('-q for printing scheduler queue')
+    print('-q for scheduler debugging info')
     print('-t for showing simulation traces')
+    print('-z for showing simulation traces')
+
+def parseSchedulerInfo(arg: str) -> Scheduler:
+    myScheduler = None
+    arg = arg.split(":")
+
+    preemptive = False
+    try:
+        preemptive = True if arg[1] == "1" else False
+    except:
+        preemptive = False
+
+    quantum = 10000
+    try:
+        quantum = int(arg[2])
+    except:
+        quantum = 10000
+
+    maxPrio = 4
+    try:
+        maxPrio = int(arg[3])
+    except:
+        maxPrio = 4
+
+    if arg[0] == "FCFS": # FCFS:preemptive
+        myScheduler = FCFS(preemptive=preemptive)
+    elif arg[0] == "SRTF": # SRTF:preemptive
+        myScheduler = SRTF(preemptive=preemptive)
+    elif arg[0] == "SRF": # SRF:preemptive
+        myScheduler = SRF(preemptive=preemptive)
+    elif arg[0] == "RR": # RR:preemptive:quantum
+        myScheduler = RR(quantum=quantum, preemptive=preemptive)
+    elif arg[0] == "PRIO": # PRIO:preemptive:quantum:maxprio
+        myScheduler = PRIO(quantum=quantum, preemptive=preemptive, maxprio=maxPrio)
+
+    # elif arg == "DRF":
+    #     myScheduler = PRIO()
+    # elif arg == "Lottery":
+    #     myScheduler = Lottery()
+
+    return myScheduler
 
 def main(argv):
     pfile = ''
@@ -94,7 +134,7 @@ def main(argv):
     myEventQueue = EventQueue()
 
     try:
-        opts, args = getopt.getopt(argv,"hvtqp:n:s:d:",["help, pfile=, nfile=, sched=, nsched="])
+        opts, args = getopt.getopt(argv,"hvtqzp:n:s:d:",["help, pfile=, nfile=, sched=, nsched="])
         # getopt.getopt(args, options, [long_options])
         # ":" indicates that an argument is needed, otherwise just an option, like -h
     except getopt.GetoptError:
@@ -109,32 +149,8 @@ def main(argv):
         elif opt in ("-n", "--nfile"):
             nfile = arg
         elif opt in ("-s", "--sched"):
-            arg = arg.split(":")
-            if arg[0] == "FCFS":
-                myScheduler = FCFS()
-            elif arg[0] == "SRTF":
-                myScheduler = SRTF()
-            elif arg[0] == "SRF":
-                myScheduler = SRF()
-            elif arg[0] == "RR": # RR:quantum
-                if len(arg) == 1:
-                    myScheduler = RR(10)
-                elif len(arg) == 2:
-                    myScheduler = RR(arg[1])
-                else:
-                    print("RR sched should be RR:quantum")
-            elif arg[0] == "PRIO": # PRIO:quantum:maxprio
-                if len(arg) == 1:
-                    myScheduler = PRIO(4, 10)
-                elif len(arg) == 3:
-                    myScheduler = PRIO(arg[1], arg[2])
-                else:
-                    print("PRIO sched should be PRIO:quantum:maxprio")
-            # elif arg == "DRF":
-            #     myScheduler = PRIO()
-            # elif arg == "Lottery":
-            #     myScheduler = Lottery()
-        elif opt in ("-d", "--nsched="):
+            myScheduler = parseSchedulerInfo(arg)
+        elif opt in ("-d", "--nsched"):
             if arg == "topK":
                 myNodeList = NodeListByDistance()
         elif opt in ("-v"):
@@ -143,6 +159,8 @@ def main(argv):
             global_.tFlag = True
         elif opt in ("-q"):
             global_.qFlag = True
+        elif opt in ("-z"):
+            global_.zFlag = True
     
     if pfile == "":
         print('Missing pod file, exiting')
@@ -226,6 +244,9 @@ def simulate(myEventQueue: EventQueue, myScheduler: Scheduler, myNodeList: NodeL
         event = None # Disconnect pointer to object
         myNodeList.setCurrentTime(currentTime)
 
+        if global_.tFlag:
+            print(myScheduler.getRunPodStr())
+
         # Process events
         if eventTrans == Transition.TO_WAIT:
             printStateIntro(currentTime, pod, timeInPrevState, State.WAIT)
@@ -233,15 +254,17 @@ def simulate(myEventQueue: EventQueue, myScheduler: Scheduler, myNodeList: NodeL
             pod.state = State.WAIT
             pod.stateTS = currentTime
             # Add to scheduler
-            myScheduler.addPod(pod)
+            myScheduler.addToQueue(pod)
 
         elif eventTrans == Transition.TO_RUN:
             printStateIntro(currentTime, pod, timeInPrevState, State.RUN)
             # Update state info
             pod.state = State.RUN
             pod.stateTS = currentTime
-            pod.execStartTime = currentTime
+            if pod.execStartTime == None:
+                pod.execStartTime = currentTime
             pod.totalWaitTime += timeInPrevState
+            myScheduler.addToRunList(pod)
 
             if pod.remainWork > myScheduler.quantum: #Remaining time to run is greater than the quantum
                 # Create new event to preempt the proc after the quantum, put the proc to preempt
@@ -260,15 +283,17 @@ def simulate(myEventQueue: EventQueue, myScheduler: Scheduler, myNodeList: NodeL
         elif eventTrans == Transition.TO_PREEMPT:
             printStateIntro(currentTime, pod, timeInPrevState, State.PREEMPT)
             # Update state info
-            pod.state = State.WAIT
+            pod.state = State.PREEMPT
             pod.stateTS = currentTime
             pod.dynamicPrio -= 1
+            pod.preempted = False
+            myScheduler.rmFromRunList(pod)
             # Return resouce to node
             node = pod.node
             pod.node = None
             node.removePod(pod)
             # Add to scheduler
-            myScheduler.addPod(pod)
+            myScheduler.addToQueue(pod)
 
         elif eventTrans == Transition.TO_TERM:
             printStateIntro(currentTime, pod, timeInPrevState, State.TERM)
@@ -276,6 +301,7 @@ def simulate(myEventQueue: EventQueue, myScheduler: Scheduler, myNodeList: NodeL
             pod.state = State.TERM
             pod.stateTS = currentTime
             pod.finishTime = currentTime
+            myScheduler.rmFromRunList(pod)
             # Return resouce to node
             node = pod.node
             pod.node = None
@@ -286,13 +312,23 @@ def simulate(myEventQueue: EventQueue, myScheduler: Scheduler, myNodeList: NodeL
         # If there are pods in the sched q and cannot be sched, then no point of running loop, exit
         # As long as a event happened, try to schedule some pods
         if myEventQueue.getNextEvtTime() != currentTime:
-            if global_.qFlag:
+            if global_.tFlag:
                 print(myScheduler.getPodQueueStr())
 
-            scheduledPods = myScheduler.schedulePods(myNodeList)
-            for p in scheduledPods:
+            scheduledPods, preemptedPods = myScheduler.schedulePods(myNodeList)
+            while len(scheduledPods) > 0:
                 # There is a pod to run, create a new event
-                myEventQueue.putEvent(Event(currentTime, p, Transition.TO_RUN))
+                myEventQueue.putEvent(Event(currentTime, scheduledPods.pop(), Transition.TO_RUN))
+            while len(preemptedPods) > 0:
+                # There is a pod to preempt, create a new event
+                pod = preemptedPods.pop()
+                futureEvent = myEventQueue.getEventByPod(pod)
+                if futureEvent.timeStamp > (currentTime + 30):
+                    remainingTime = futureEvent.timeStamp - (currentTime + 30)
+                    pod.remainWork += remainingTime # Restore the amount of work didn't get to do
+                    myEventQueue.removeEvent(futureEvent)
+                    futureEvent = None
+                    myEventQueue.putEvent(Event(currentTime+30, pod, Transition.TO_PREEMPT)) # Has 30 sec to run before termination
 
         # Get the next event
         event = myEventQueue.getEvent()
