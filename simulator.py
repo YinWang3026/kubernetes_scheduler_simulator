@@ -117,10 +117,9 @@ def parseSchedulerInfo(arg: str) -> Scheduler:
         myScheduler = RR(quantum=quantum, preemptive=preemptive)
     elif arg[0] == "PRIO": # PRIO:preemptive:quantum:maxprio
         myScheduler = PRIO(quantum=quantum, preemptive=preemptive, maxprio=maxPrio)
-
-    # elif arg == "DRF":
-    #     myScheduler = PRIO()
-    # elif arg == "Lottery":
+    elif arg[0] == "DRF":
+        myScheduler = DRF(preemptive=preemptive)
+    # elif arg[0] == "Lottery":
     #     myScheduler = Lottery()
 
     return myScheduler
@@ -184,16 +183,17 @@ def main(argv):
             print("Header: " + header)
         for line in f.readlines():
             line = line.strip().split()
-            name = line[0]
-            arrivalTime = int(line[1])
-            work = int(line[2])
-            prio = int(line[3])
-            tickets = int(line[4])
-            cpu = int(line[5])
-            gpu = int(line[6])
-            ram = int(line[7])
+            user = line[0]
+            name = line[1]
+            arrivalTime = int(line[2])
+            work = int(line[3])
+            prio = int(line[4])
+            tickets = int(line[5])
+            cpu = int(line[6])
+            gpu = int(line[7])
+            ram = int(line[8])
 
-            p = Pod(name, arrivalTime, work, cpu, gpu, ram, prio, tickets, State.CREATED)
+            p = Pod(user, name, arrivalTime, work, cpu, gpu, ram, prio, tickets, State.CREATED)
             myPodList.addPod(p)
             myEventQueue.putEvent(Event(arrivalTime, p, Transition.TO_WAIT))
  
@@ -210,6 +210,9 @@ def main(argv):
 
             myNodeList.addNode(Node(name, cpu, gpu, ram))
     
+    if repr(myScheduler).strip().split()[1] == "DRF":
+        myScheduler.calculate_tot_resources(myNodeList)
+        
     if global_.vFlag:
         print(myPodList)
         print(myNodeList)

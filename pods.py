@@ -10,8 +10,9 @@ class State(Enum):
     PREEMPT = auto()
 
 class Pod:
-    def __init__(self, name: str, arrivalTime: int, work: int, cpu: int, gpu: int, ram: int, prio: int, tickets: int, state: State) -> None:
+    def __init__(self, user: str, name: str, arrivalTime: int, work: int, cpu: int, gpu: int, ram: int, prio: int, tickets: int, state: State) -> None:
         # Basic info - DOES NOT CHANGE
+        self.user = user
         self.name = name
         self.at = arrivalTime
         self.work = work
