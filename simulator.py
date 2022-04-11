@@ -117,9 +117,8 @@ def parseSchedulerInfo(arg: str) -> Scheduler:
         myScheduler = RR(quantum=quantum, preemptive=preemptive)
     elif arg[0] == "PRIO": # PRIO:preemptive:quantum:maxprio
         myScheduler = PRIO(quantum=quantum, preemptive=preemptive, maxprio=maxPrio)
-
-    # elif arg == "DRF":
-    #     myScheduler = PRIO()
+    elif arg == "DRF":
+        myScheduler = DRF(preemptive=preemptive)
     # elif arg == "Lottery":
     #     myScheduler = Lottery()
 
