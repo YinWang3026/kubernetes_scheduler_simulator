@@ -400,102 +400,15 @@ class PRIO(Scheduler): # Priority scheduling
     def __repr__(self) -> str:
         return "Scheduler: PRIO " + super().__repr__()
 
-class DRF(Scheduler): # DRF
-    def __init__(self, nodelist: NodeList) -> None:
-        super().__init__()
-        self.tot_cpu = 0
-        self.tot_gpu = 0
-        self.tot_ram = 0
+# class DRF(Scheduler): # DRF
+#     def __init__(self) -> None:
+#         super().__init__()
 
-        for node in nodelist:
-            self.tot_cpu += node.cpu
-            self.tot_gpu += node.gpu
-            self.tot_ram += node.ram
+#     def addToQueue(self, pod: Pod) -> None:
+#         pass
 
-        self.res_shares = dict() #resource share per user
-
-    def addPod(self, pod: Pod) -> None:
-        addloc = -1
-
-        if pod.user is not in self.res_shares: #cur dominant resource share is zero
-            self.res_shares[pod.user] = [0, 0, 0] #cpu gpu ram
-            self.podQueue.insert(0, pod) #add to the front
-            addloc = 0
-
-        else:
-            curr_cpu = self.res_shares[pod.user][0]
-            curr_gpu = self.res_shares[pod.user][1]
-            curr_ram = self.res_shares[pod.user][2]
-            curr_dominant_share = max(curr_cpu / self.tot_cpu, curr_gpu / self.tot_gpu, curr_ram / self.tot_ram)
-
-            for i in range(len(self.podQueue)):
-                next_cpu = self.res_shares[self.podQueue[i].user][0]
-                next_gpu = self.res_shares[self.podQueue[i].user][1]
-                next_ram = self.res_shares[self.podQueue[i].user][2]
-
-                next_dominant_share = max(next_cpu / self.tot_cpu, next_gpu / self.tot_gpu, next_ram / self.tot_ram)
-                
-                if curr_dominant_share < next_dominant_share:
-                    self.podQueue.insert(i, pod)
-                    addloc = i
-                    break
-
-        if addloc == -1:
-            self.podQueue.append(pod)
-
-    def schedulePods(self, myNodeList: NodeList) -> Tuple[list[Pod],list[Pod]]:
-        if len(self.podQueue) == 0:
-            return [], []
-
-        scheduledPods = []
-        preemptedPods = []
-        notScheduledPods = []
-        currentTime = self.podQueue[0].stateTS
-        while len(self.podQueue) > 0 and self.podQueue[0].stateTS == currentTime:
-            # Try to schedule all the pods of current time
-            currPod = self.podQueue.popleft()
-            matchedNodes = myNodeList.getMatch(currPod, 1)
-            if len(matchedNodes) > 0: # At least one Node can run this pod
-                # Not sure how this going to work yet. TODO FIND A BETTER WAY TO PICK CHOSEN NODE
-                chosenNode = matchedNodes[0] # There is only one node here lol
-                if global_.qFlag:
-                    print("Matched Pod [%s] with Node [%s]" % (currPod.name, chosenNode.name))
-
-                chosenNode.addPod(currPod) # Take the resource now, so that no other nodes can take the resource
-                currPod.node = chosenNode # Link node to pod
-                scheduledPods.append(currPod)
-
-                #update current resource shares
-                self.res_shares[currPod.user][0] += currPod.cpu
-                self.res_shares[currPod.user][1] += currPod.gpu
-                self.res_shares[currPod.user][2] += currPod.ram
-            else:
-                # No node can run this pod
-                if self.isPreemptive: # If preemptive, then try removing a pod
-                    preemptedPod = self.preemptPod(currPod)
-                    if preemptedPod != None:
-                        preemptedPods.append(preemptedPod)
-                        if global_.qFlag:
-                            print("Pod [%s] w/ Prio [%d] is preempted by Pod [%s] w/ Prio [%d]" \
-                                % (preemptedPod.name, preemptedPod.prio, currPod.name, currPod.prio))
-                    else:
-                        if global_.qFlag:
-                            print("Unable to Preempt Pods for Pod [%s]" % (currPod.name))
-                    # Put pod back into queue and wait ...
-                    notScheduledPods.append(currPod)
-                else: # Otherwise, put pod back into queue and wait ...
-                    notScheduledPods.append(currPod)
-                    if global_.qFlag:
-                        print("Unable to Match Pod [%s] with Nodes" % (currPod.name))
-    
-        while len(notScheduledPods) > 0:
-            self.addToQueue(notScheduledPods.pop())
-
-        return scheduledPods, preemptedPods
-
-    def __repr__(self) -> str:
-        return "Scheduler: DRF " + super().__repr__()
-
+#     def __repr__(self) -> str:
+#         return "Scheduler: DRF " + super().__repr__()
 
 # class Lottery(Scheduler): # Random
 #     def __init__(self) -> None:
