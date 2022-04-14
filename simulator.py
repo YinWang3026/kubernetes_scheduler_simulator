@@ -119,8 +119,8 @@ def parseSchedulerInfo(arg: str) -> Scheduler:
         myScheduler = PRIO(quantum=quantum, preemptive=preemptive, maxprio=maxPrio)
     elif arg[0] == "DRF":
         myScheduler = DRF(preemptive=preemptive)
-    # elif arg[0] == "Lottery":
-    #     myScheduler = Lottery()
+    elif arg[0] == "Lottery":
+        myScheduler = Lottery(preemptive=preemptive)
 
     return myScheduler
 
@@ -271,6 +271,8 @@ def simulate(myEventQueue: EventQueue, myScheduler: Scheduler, myNodeList: NodeL
 
             if pod.remainWork > myScheduler.quantum: #Remaining time to run is greater than the quantum
                 # Create new event to preempt the proc after the quantum, put the proc to preempt
+                if repr(myScheduler).strip().split()[1] == "Lottery":
+                    myScheduler.update_comp_ticket(pod)
                 myEventQueue.putEvent(Event(currentTime+myScheduler.quantum, pod, Transition.TO_PREEMPT))
                 pod.remainWork -= myScheduler.quantum
 
@@ -309,7 +311,9 @@ def simulate(myEventQueue: EventQueue, myScheduler: Scheduler, myNodeList: NodeL
             node = pod.node
             pod.node = None
             node.removePod(pod)
-        
+            # update resource share
+            if repr(myScheduler).strip().split()[1] == "DRF":
+                myScheduler.update_res_shares(pod)
         # Get next process
         # If another event of same time, process the next event before calling scheduler
         # If there are pods in the sched q and cannot be sched, then no point of running loop, exit

@@ -1,6 +1,6 @@
-UserName podName arrivalTime work prio tickets cpu gpu ram
-UserA PodB 4 150 3 54 4 5 117
-UserC PodD 6 824 2 35 14 13 127
-UserE PodF 7 164 4 13 5 28 93
-UserG PodH 7 291 3 97 1 26 116
-UserI PodJ 11 948 2 69 5 17 29
+UserName podName arrivalTime work prio tickets cpu gpu ram tickets
+UserB PodF 2 260 4 80 1 21 55
+UserA PodG 6 113 2 30 10 11 39
+UserA PodH 6 212 1 30 4 14 7
+UserE PodI 9 999 3 30 10 12 36
+UserB PodJ 13 243 4 80 4 5 81
