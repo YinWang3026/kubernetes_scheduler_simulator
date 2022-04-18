@@ -343,6 +343,7 @@ class PRIO(Scheduler): # Priority scheduling
             # Try to get a pod for scheduling
             currPod = None
             for i in range(self.maxprio - 1, -1, -1):
+                print(i)
                 if len(self.activeQ[i]) > 0:
                     currPod = self.activeQ[i].popleft()
                     break
@@ -415,9 +416,8 @@ class DRF(Scheduler): # DRF
             self.tot_gpu += node.gpu
             self.tot_ram += node.ram
 
-    def update_res_shares(self, pod: Pod):
-        ##when a job is terminated, update res share to prevent allocated resources beign larger than
-        ##total resources while they are actually not
+    def update_res_shares(self, pod: Pod) -> None: #only called when a job is terminated
+        #reduce deallocated res share to prevent allocated resources being larger than total resources while they are actually not
         self.res_shares[pod.user][0] -= pod.cpu
         self.res_shares[pod.user][1] -= pod.gpu
         self.res_shares[pod.user][2] -= pod.ram
@@ -425,7 +425,7 @@ class DRF(Scheduler): # DRF
     def addToQueue(self, pod: Pod) -> None:
         addloc = -1
 
-        if pod.user not in self.res_shares.keys(): #cur dominant resource share is zero
+        if pod.user not in self.res_shares.keys(): #current dominant resource share is zero
             self.res_shares[pod.user] = [0, 0, 0] #cpu gpu ram
             self.podQueue.insert(0, pod) #add to the front
             addloc = 0
@@ -524,6 +524,9 @@ class Lottery(Scheduler): # Random
         
         winner = random.choice(tickets)
         
+        if global_.vFlag:
+            print("current winner : ", winner)
+            print("number of jobs in the queue of user ", winner, self.user_jobs[winner])
         return winner
 
     def update_comp_ticket(self, pod: Pod) -> None: #this is called in the simulator when preempting a job
@@ -560,6 +563,7 @@ class Lottery(Scheduler): # Random
             for idx, pod in enumerate(self.podQueue): #find the first job added from the winner
                 if pod.user == target_user:
                     currPod = pod
+                    break
             
             assert currPod != None
 

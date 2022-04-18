@@ -154,3 +154,71 @@ class NodeListByDistance(NodeList):
         
         # Reverse list so that it is sorted from smallest distance to largest distance
         return matchedNodes[::-1]
+
+class NodeListByLRP(NodeList): #LeastRequestedPriority
+    def __init__(self) -> None:
+        super().__init__()
+        self.nodedict = dict()
+
+    def addNode(self, node: Node) -> None:
+        self.nodes.append(node)
+        self.nodedict[node.name] = node
+
+    def getMatch(self, pod: Pod, k: int) -> list[Node]:
+        #favors nodes with fewer requested resources
+        potentialMatches = [] # Max heap
+
+        for i in self.nodes:
+            if i.curCpu >= pod.cpu and i.curGpu >= pod.gpu and i.curRam >= pod.ram:
+                score = ((i.curCpu * 10 / i.cpu) + (i.curGpu * 10 / i.gpu) + (i.curRam * 10 / i.ram)) / 3
+                heapq.heappush(potentialMatches, (score, i.name))
+                if len(potentialMatches) > k:
+                    # Remove the largest usage rate node
+                    heapq.heappop(potentialMatches)
+        
+        matchedNodes = []
+        while len(potentialMatches) > 0:
+            matchedNodes.append(self.nodedict[heapq.heappop(potentialMatches)[1]])
+
+        return matchedNodes[::-1]
+
+
+class NodeListByBRA(NodeList): #BalancedResourceAllocation, always used with LeastRequestedPriority
+    def __init__(self) -> None:
+        super().__init__()
+        self.nodedict = dict()
+
+    def addNode(self, node: Node) -> None:
+        self.nodes.append(node)
+        self.nodedict[node.name] = node
+
+    
+    def getBRAScore(self, pod:Pod, node:Node) -> float:
+        cpuFraction = pod.cpu / node.curCpu
+        gpuFraction = pod.gpu / node.curGpu
+        ramFraction = pod.ram / node.curRam
+
+        distance = sqrt((node.curCpu-pod.cpu)**2 + (node.curGpu-pod.cpu)**2 + (node.curRam-pod.ram)**2)
+        bra_score = 10 - distance*10
+
+        return bra_score
+
+    def getMatch(self, pod: Pod, k: int) -> list[Node]:
+        #favors nodes with balanced resource usage rate
+        potentialMatches = []
+        
+        #First priority : favors nodes with fewer requested resources
+        for i in self.nodes:
+            if i.curCpu >= pod.cpu and i.curGpu >= pod.gpu and i.curRam >= pod.ram:
+                lrpscore = ((i.curCpu * 10 / i.cpu) + (i.curGpu * 10 / i.gpu) + (i.curRam * 10 / i.ram)) / 3
+                brascore = self.getBRAScore(pod, i)
+                heapq.heappush(potentialMatches, (lrpscore, -brascore, i.name))
+                if len(potentialMatches) > k:
+                    # Remove the largest usage rate node
+                    heapq.heappop(potentialMatches)
+
+        matchedNodes = []
+        while len(potentialMatches) > 0:
+            matchedNodes.append(self.nodedict[heapq.heappop(potentialMatches)[2]])
+
+        return matchedNodes[::-1]
