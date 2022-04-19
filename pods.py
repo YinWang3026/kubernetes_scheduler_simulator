@@ -33,7 +33,7 @@ class Pod:
         self.dynamicPrio = prio # Current prio
 
         # Benchmarking values
-        self.execStartTime = None
+        self.execStartTime = -1
         self.finishTime = 0
         self.totalWaitTime = 0
     
@@ -45,8 +45,8 @@ class Pod:
         return "Name: %s, State: %s, StateTS: %d" % (self.name, self.state.name, self.stateTS)
     
     def getBenchmarkStr(self) -> str:
-        return "Name: %s, ExecStartTime: %d, FinishTime: %d, TotalWaitTime: %d" \
-            % (self.name, self.execStartTime, self.finishTime, self.totalWaitTime)
+        return "Name: %s, ArrivalTime: %d, ExecStartTime: %d, FinishTime: %d, TotalWaitTime: %d" \
+            % (self.name, self.at, self.execStartTime, self.finishTime, self.totalWaitTime)
 
 class PodList:
     def __init__(self) -> None:
@@ -62,7 +62,7 @@ class PodList:
         return s
     
     def getPodsBenchmarkStr(self) -> str:
-        s = "Pod List Benchmarks:\n"
+        s = "Pod Benchmarks:\n"
         for i in self.pods:
             s += "\t" + i.getBenchmarkStr() + "\n"
         return s

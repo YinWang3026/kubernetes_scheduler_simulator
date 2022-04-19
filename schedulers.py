@@ -7,12 +7,13 @@ import global_
 import random
 
 class Scheduler:
-    def __init__(self, quantum: int = 10000, maxprio: int = 4, preemptive: bool = False) -> None:
+    def __init__(self, name: str, quantum: int = 10000, maxprio: int = 4, preemptive: bool = False) -> None:
         self.quantum = quantum
         self.maxprio = maxprio
         self.isPreemptive = preemptive
         self.runningPods = [] # Pods currently running in nodes
         self.podQueue = deque() # Pods in the queue waiting to be scheduled
+        self.name = name
     
     def addToQueue(self, pod: Pod) -> None:
         # Adds Pod to queue
@@ -68,7 +69,7 @@ class Scheduler:
         return self.maxprio
     
     def getPodQueueStr(self) -> str:
-        s = "SchedQ[%d]:" % (len(self.podQueue))
+        s = "SchedQ[%d]: " % (len(self.podQueue))
         for i in self.podQueue:
             s += i.name + " "
         return s
@@ -80,13 +81,13 @@ class Scheduler:
         return s
     
     def __repr__(self) -> str:
-        return "Quantum: %d, Maxprio: %d, Preemptive: %s"\
-             % (self.quantum, self.maxprio, self.isPreemptive)
+        return "Scheduler: %s, Quantum: %d, Maxprio: %d, Preemptive: %s" \
+             % (self.name, self.quantum, self.maxprio, self.isPreemptive)
         
 class FCFS(Scheduler): # First Come First Served
     def __init__(self, preemptive: bool) -> None:
         # Does not care about quantum or maxprio, leaving as some large default
-        super().__init__(preemptive=preemptive)
+        super().__init__(name="FCFS", preemptive=preemptive)
 
     def addToQueue(self, pod: Pod) -> None:
         # Queue needs to be sorted by Pod.stateTS and Pod.prio
@@ -146,13 +147,10 @@ class FCFS(Scheduler): # First Come First Served
             self.addToQueue(notScheduledPods.pop())
 
         return scheduledPods, preemptedPods
-
-    def __repr__(self) -> str:
-        return "Scheduler: FCFS " + super().__repr__()
     
 class SRTF(Scheduler): # Shortest Remaining Time First
     def __init__(self, preemptive: bool) -> None:
-        super().__init__(preemptive=preemptive)
+        super().__init__(name="SRTF", preemptive=preemptive)
 
     def addToQueue(self, pod: Pod) -> None: # put smallest usage time 
         # Queue needs to be sorted by Pod.remainingWork and Pod.prio
@@ -213,12 +211,9 @@ class SRTF(Scheduler): # Shortest Remaining Time First
 
         return scheduledPods, preemptedPods
 
-    def __repr__(self) -> str:
-        return "Scheduler: SRTF " + super().__repr__()
-
 class SRF(Scheduler): # Smallest Resource First
     def __init__(self, preemptive: bool) -> None:
-        super().__init__(preemptive=preemptive)
+        super().__init__(name="SRF", preemptive=preemptive)
 
     def addToQueue(self, pod: Pod) -> None:
         index = 0
@@ -290,21 +285,16 @@ class SRF(Scheduler): # Smallest Resource First
 
         return scheduledPods, preemptedPods
 
-    def __repr__(self) -> str:
-        return "Scheduler: SRF " + super().__repr__()
-
 class RR(FCFS): # Round Robin
     def __init__(self, quantum: int, preemptive: bool) -> None:
         # FCFS with a quantum lol
         super().__init__(preemptive=preemptive)
         self.quantum = quantum
-
-    def __repr__(self) -> str:
-        return "Scheduler: RR " + super().__repr__()
+        self.name = "RR"
 
 class PRIO(Scheduler): # Priority scheduling
     def __init__(self, quantum: int, maxprio: int, preemptive: bool) -> None:
-        super().__init__(maxprio=maxprio, quantum=quantum, preemptive=preemptive)
+        super().__init__(name="PRIO", maxprio=maxprio, quantum=quantum, preemptive=preemptive)
         self.expireQ = []
         self.activeQ = []
 
@@ -343,7 +333,6 @@ class PRIO(Scheduler): # Priority scheduling
             # Try to get a pod for scheduling
             currPod = None
             for i in range(self.maxprio - 1, -1, -1):
-                print(i)
                 if len(self.activeQ[i]) > 0:
                     currPod = self.activeQ[i].popleft()
                     break
@@ -399,12 +388,9 @@ class PRIO(Scheduler): # Priority scheduling
 
         return scheduledPods, preemptedPods
 
-    def __repr__(self) -> str:
-        return "Scheduler: PRIO " + super().__repr__()
-
 class DRF(Scheduler): # DRF
     def __init__(self, preemptive: bool) -> None:
-        super().__init__(preemptive=preemptive)
+        super().__init__(name="DRF", preemptive=preemptive)
         self.tot_cpu = 0
         self.tot_gpu = 0
         self.tot_ram = 0
@@ -509,7 +495,7 @@ class DRF(Scheduler): # DRF
 
 class Lottery(Scheduler): # Random
     def __init__(self, preemptive: bool) -> None:
-        super().__init__(preemptive=preemptive)
+        super().__init__(name="Lottery", preemptive=preemptive)
         self.podQueue = deque()
         self.user_jobs = dict() #dict of (username, # of jobs in the queue)
         self.user_tickets = dict() #dict of tickets each user holds (should be updated to zero if no jobs in the queue)
@@ -524,7 +510,7 @@ class Lottery(Scheduler): # Random
         
         winner = random.choice(tickets)
         
-        if global_.vFlag:
+        if global_.qFlag:
             print("current winner : ", winner)
             print("number of jobs in the queue of user ", winner, self.user_jobs[winner])
         return winner
@@ -608,9 +594,6 @@ class Lottery(Scheduler): # Random
             self.addToQueue(notScheduledPods.pop())
 
         return scheduledPods, preemptedPods
-
-    def __repr__(self) -> str:
-        return "Scheduler: Lottery" + super().__repr__()
 
 # class OurNovelSolution(Scheduler):
 #     def __init__(self) -> None:
