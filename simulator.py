@@ -83,7 +83,7 @@ def userCallHelper():
     print('-v for general debugging info')
     print('-q for scheduler debugging info')
     print('-t for showing simulation traces')
-    print('-z for showing simulation traces')
+    print('-z for showing node traces')
 
 def parseSchedulerInfo(arg: str) -> Scheduler:
     myScheduler = None
@@ -117,11 +117,10 @@ def parseSchedulerInfo(arg: str) -> Scheduler:
         myScheduler = RR(quantum=quantum, preemptive=preemptive)
     elif arg[0] == "PRIO": # PRIO:preemptive:quantum:maxprio
         myScheduler = PRIO(quantum=quantum, preemptive=preemptive, maxprio=maxPrio)
-
-    # elif arg == "DRF":
-    #     myScheduler = PRIO()
-    # elif arg == "Lottery":
-    #     myScheduler = Lottery()
+    elif arg[0] == "DRF":
+        myScheduler = DRF(preemptive=preemptive)
+    elif arg[0] == "Lottery":
+        myScheduler = Lottery(preemptive=preemptive)
 
     return myScheduler
 
@@ -153,6 +152,10 @@ def main(argv):
         elif opt in ("-d", "--nsched"):
             if arg == "topK":
                 myNodeList = NodeListByDistance()
+            elif arg == "LRP":
+                myNodeList = NodeListByLRP()
+            elif arg == "BRA":
+                myNodeList = NodeListByBRA()
         elif opt in ("-v"):
             global_.vFlag = True
         elif opt in ("-t"):
@@ -184,16 +187,17 @@ def main(argv):
             print("Header: " + header)
         for line in f.readlines():
             line = line.strip().split()
-            name = line[0]
-            arrivalTime = int(line[1])
-            work = int(line[2])
-            prio = int(line[3])
-            tickets = int(line[4])
-            cpu = int(line[5])
-            gpu = int(line[6])
-            ram = int(line[7])
+            user = line[0]
+            name = line[1]
+            arrivalTime = int(line[2])
+            work = int(line[3])
+            prio = int(line[4])
+            tickets = int(line[5])
+            cpu = int(line[6])
+            gpu = int(line[7])
+            ram = int(line[8])
 
-            p = Pod(name, arrivalTime, work, cpu, gpu, ram, prio, tickets, State.CREATED)
+            p = Pod(user, name, arrivalTime, work, cpu, gpu, ram, prio, tickets, State.CREATED)
             myPodList.addPod(p)
             myEventQueue.putEvent(Event(arrivalTime, p, Transition.TO_WAIT))
  
@@ -210,6 +214,9 @@ def main(argv):
 
             myNodeList.addNode(Node(name, cpu, gpu, ram))
     
+    if myScheduler.name == "DRF":
+        myScheduler.calculate_tot_resources(myNodeList)
+        
     if global_.vFlag:
         print(myPodList)
         print(myNodeList)
@@ -219,9 +226,12 @@ def main(argv):
     # Start simulation
     simulate(myEventQueue, myScheduler, myNodeList)
 
-    if global_.vFlag:
-        print(myPodList.getPodsBenchmarkStr())
-        print(myNodeList.getUsageLogs())
+    print("Summary:")
+    print("Pod File: %s\tNode File:%s" %(pfile, nfile))
+    print(myScheduler)
+    print("Unable to schedule Pods: %s" % (myScheduler.getPodQueueStr()))
+    print(myPodList.getPodsBenchmarkStr())
+    print(myNodeList.getUsageLogs())
     
 def simulate(myEventQueue: EventQueue, myScheduler: Scheduler, myNodeList: NodeList) -> None:
     def printStateIntro(currentTime, proc, timeInPrevState, newState):
@@ -261,13 +271,15 @@ def simulate(myEventQueue: EventQueue, myScheduler: Scheduler, myNodeList: NodeL
             # Update state info
             pod.state = State.RUN
             pod.stateTS = currentTime
-            if pod.execStartTime == None:
+            if pod.execStartTime == -1:
                 pod.execStartTime = currentTime
             pod.totalWaitTime += timeInPrevState
             myScheduler.addToRunList(pod)
 
             if pod.remainWork > myScheduler.quantum: #Remaining time to run is greater than the quantum
                 # Create new event to preempt the proc after the quantum, put the proc to preempt
+                if myScheduler.name == "Lottery":
+                    myScheduler.update_comp_ticket(pod)
                 myEventQueue.putEvent(Event(currentTime+myScheduler.quantum, pod, Transition.TO_PREEMPT))
                 pod.remainWork -= myScheduler.quantum
 
@@ -306,7 +318,9 @@ def simulate(myEventQueue: EventQueue, myScheduler: Scheduler, myNodeList: NodeL
             node = pod.node
             pod.node = None
             node.removePod(pod)
-        
+            # update resource share
+            if myScheduler.name == "DRF":
+                myScheduler.update_res_shares(pod)
         # Get next process
         # If another event of same time, process the next event before calling scheduler
         # If there are pods in the sched q and cannot be sched, then no point of running loop, exit
@@ -334,7 +348,7 @@ def simulate(myEventQueue: EventQueue, myScheduler: Scheduler, myNodeList: NodeL
         event = myEventQueue.getEvent()
     
     if global_.tFlag:
-        print("\nSimulation End\nPods unable to schedule: %s\n###################\n" % (myScheduler.getPodQueueStr()))
+        print("\nSimulation End\n####################################\n")
 
 if __name__ == "__main__":
    main(sys.argv[1:])

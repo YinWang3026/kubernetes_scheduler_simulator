@@ -4,14 +4,16 @@ from pods import *
 from nodes import *
 from sys import exit
 import global_
+import random
 
 class Scheduler:
-    def __init__(self, quantum: int = 10000, maxprio: int = 4, preemptive: bool = False) -> None:
+    def __init__(self, name: str, quantum: int = 10000, maxprio: int = 4, preemptive: bool = False) -> None:
         self.quantum = quantum
         self.maxprio = maxprio
         self.isPreemptive = preemptive
         self.runningPods = [] # Pods currently running in nodes
         self.podQueue = deque() # Pods in the queue waiting to be scheduled
+        self.name = name
     
     def addToQueue(self, pod: Pod) -> None:
         # Adds Pod to queue
@@ -67,7 +69,7 @@ class Scheduler:
         return self.maxprio
     
     def getPodQueueStr(self) -> str:
-        s = "SchedQ[%d]:" % (len(self.podQueue))
+        s = "SchedQ[%d]: " % (len(self.podQueue))
         for i in self.podQueue:
             s += i.name + " "
         return s
@@ -79,13 +81,13 @@ class Scheduler:
         return s
     
     def __repr__(self) -> str:
-        return "Quantum: %d, Maxprio: %d, Preemptive: %s"\
-             % (self.quantum, self.maxprio, self.isPreemptive)
+        return "Scheduler: %s, Quantum: %d, Maxprio: %d, Preemptive: %s" \
+             % (self.name, self.quantum, self.maxprio, self.isPreemptive)
         
 class FCFS(Scheduler): # First Come First Served
     def __init__(self, preemptive: bool) -> None:
         # Does not care about quantum or maxprio, leaving as some large default
-        super().__init__(preemptive=preemptive)
+        super().__init__(name="FCFS", preemptive=preemptive)
 
     def addToQueue(self, pod: Pod) -> None:
         # Queue needs to be sorted by Pod.stateTS and Pod.prio
@@ -145,13 +147,10 @@ class FCFS(Scheduler): # First Come First Served
             self.addToQueue(notScheduledPods.pop())
 
         return scheduledPods, preemptedPods
-
-    def __repr__(self) -> str:
-        return "Scheduler: FCFS " + super().__repr__()
     
 class SRTF(Scheduler): # Shortest Remaining Time First
     def __init__(self, preemptive: bool) -> None:
-        super().__init__(preemptive=preemptive)
+        super().__init__(name="SRTF", preemptive=preemptive)
 
     def addToQueue(self, pod: Pod) -> None: # put smallest usage time 
         # Queue needs to be sorted by Pod.remainingWork and Pod.prio
@@ -212,12 +211,9 @@ class SRTF(Scheduler): # Shortest Remaining Time First
 
         return scheduledPods, preemptedPods
 
-    def __repr__(self) -> str:
-        return "Scheduler: SRTF " + super().__repr__()
-
 class SRF(Scheduler): # Smallest Resource First
     def __init__(self, preemptive: bool) -> None:
-        super().__init__(preemptive=preemptive)
+        super().__init__(name="SRF", preemptive=preemptive)
 
     def addToQueue(self, pod: Pod) -> None:
         index = 0
@@ -289,21 +285,16 @@ class SRF(Scheduler): # Smallest Resource First
 
         return scheduledPods, preemptedPods
 
-    def __repr__(self) -> str:
-        return "Scheduler: SRF " + super().__repr__()
-
 class RR(FCFS): # Round Robin
     def __init__(self, quantum: int, preemptive: bool) -> None:
         # FCFS with a quantum lol
         super().__init__(preemptive=preemptive)
         self.quantum = quantum
-
-    def __repr__(self) -> str:
-        return "Scheduler: RR " + super().__repr__()
+        self.name = "RR"
 
 class PRIO(Scheduler): # Priority scheduling
     def __init__(self, quantum: int, maxprio: int, preemptive: bool) -> None:
-        super().__init__(maxprio=maxprio, quantum=quantum, preemptive=preemptive)
+        super().__init__(name="PRIO", maxprio=maxprio, quantum=quantum, preemptive=preemptive)
         self.expireQ = []
         self.activeQ = []
 
@@ -397,28 +388,212 @@ class PRIO(Scheduler): # Priority scheduling
 
         return scheduledPods, preemptedPods
 
-    def __repr__(self) -> str:
-        return "Scheduler: PRIO " + super().__repr__()
+class DRF(Scheduler): # DRF
+    def __init__(self, preemptive: bool) -> None:
+        super().__init__(name="DRF", preemptive=preemptive)
+        self.tot_cpu = 0
+        self.tot_gpu = 0
+        self.tot_ram = 0
+        self.res_shares = dict() #resource share per user
 
-# class DRF(Scheduler): # DRF
-#     def __init__(self) -> None:
-#         super().__init__()
+    def calculate_tot_resources(self, nodelist: NodeList) -> None: #this is called by main only for the DRF before the simulation
+        for node in nodelist.nodes:
+            self.tot_cpu += node.cpu
+            self.tot_gpu += node.gpu
+            self.tot_ram += node.ram
 
-#     def addToQueue(self, pod: Pod) -> None:
-#         pass
+    def update_res_shares(self, pod: Pod) -> None: #only called when a job is terminated
+        #reduce deallocated res share to prevent allocated resources being larger than total resources while they are actually not
+        self.res_shares[pod.user][0] -= pod.cpu
+        self.res_shares[pod.user][1] -= pod.gpu
+        self.res_shares[pod.user][2] -= pod.ram
 
-#     def __repr__(self) -> str:
-#         return "Scheduler: DRF " + super().__repr__()
+    def addToQueue(self, pod: Pod) -> None:
+        addloc = -1
 
-# class Lottery(Scheduler): # Random
-#     def __init__(self) -> None:
-#         self.queue = deque()
+        if pod.user not in self.res_shares.keys(): #current dominant resource share is zero
+            self.res_shares[pod.user] = [0, 0, 0] #cpu gpu ram
+            self.podQueue.insert(0, pod) #add to the front
+            addloc = 0
 
-#     def addToQueue(self, pod: Pod) -> None:
-#         pass
+        else:
+            curr_cpu = self.res_shares[pod.user][0]
+            curr_gpu = self.res_shares[pod.user][1]
+            curr_ram = self.res_shares[pod.user][2]
+            curr_dominant_share = max(curr_cpu / self.tot_cpu, curr_gpu / self.tot_gpu, curr_ram / self.tot_ram)
+
+            for i in range(len(self.podQueue)):
+                next_cpu = self.res_shares[self.podQueue[i].user][0]
+                next_gpu = self.res_shares[self.podQueue[i].user][1]
+                next_ram = self.res_shares[self.podQueue[i].user][2]
+
+                next_dominant_share = max(next_cpu / self.tot_cpu, next_gpu / self.tot_gpu, next_ram / self.tot_ram)
                 
-#     def __repr__(self) -> str:
-#         return "Lottery" + super().__repr__()
+                if curr_dominant_share < next_dominant_share:
+                    self.podQueue.insert(i, pod)
+                    addloc = i
+                    break
+
+        if addloc == -1:
+            self.podQueue.append(pod)
+
+    def schedulePods(self, myNodeList: NodeList) -> Tuple[list[Pod],list[Pod]]:
+        if len(self.podQueue) == 0:
+            return [], []
+
+        scheduledPods = []
+        preemptedPods = []
+        notScheduledPods = []
+        currentTime = self.podQueue[0].stateTS
+        while len(self.podQueue) > 0 and self.podQueue[0].stateTS == currentTime: # Try to schedule all the pods of current time
+            
+            currPod = self.podQueue.popleft()
+            matchedNodes = myNodeList.getMatch(currPod, 1)
+            if len(matchedNodes) > 0: # At least one Node can run this pod
+                # Not sure how this going to work yet. TODO FIND A BETTER WAY TO PICK CHOSEN NODE
+                chosenNode = matchedNodes[0] # There is only one node here lol
+                if global_.qFlag:
+                    print("Matched Pod [%s] with Node [%s]" % (currPod.name, chosenNode.name))
+
+                chosenNode.addPod(currPod) # Take the resource now, so that no other nodes can take the resource
+                currPod.node = chosenNode # Link node to pod
+                scheduledPods.append(currPod)
+
+                #update current resource shares
+                self.res_shares[currPod.user][0] += currPod.cpu
+                self.res_shares[currPod.user][1] += currPod.gpu
+                self.res_shares[currPod.user][2] += currPod.ram
+            else:
+                # No node can run this pod
+                if self.isPreemptive: # If preemptive, then try removing a pod
+                    preemptedPod = self.preemptPod(currPod)
+                    if preemptedPod != None:
+                        preemptedPods.append(preemptedPod)
+                        if global_.qFlag:
+                            print("Pod [%s] w/ Prio [%d] is preempted by Pod [%s] w/ Prio [%d]" \
+                                % (preemptedPod.name, preemptedPod.prio, currPod.name, currPod.prio))
+                        #reduce resource share for preempted pod
+                        self.update_res_shares(preemptedPod)
+                    else:
+                        if global_.qFlag:
+                            print("Unable to Preempt Pods for Pod [%s]" % (currPod.name))
+                    # Put pod back into queue and wait ...
+                    notScheduledPods.append(currPod)
+                else: # Otherwise, put pod back into queue and wait ...
+                    notScheduledPods.append(currPod)
+                    if global_.qFlag:
+                        print("Unable to Match Pod [%s] with Nodes" % (currPod.name))
+    
+        while len(notScheduledPods) > 0:
+            self.addToQueue(notScheduledPods.pop())
+
+        return scheduledPods, preemptedPods
+
+    def __repr__(self) -> str:
+        return "Scheduler: DRF " + super().__repr__()
+
+
+class Lottery(Scheduler): # Random
+    def __init__(self, preemptive: bool) -> None:
+        super().__init__(name="Lottery", preemptive=preemptive)
+        self.podQueue = deque()
+        self.user_jobs = dict() #dict of (username, # of jobs in the queue)
+        self.user_tickets = dict() #dict of tickets each user holds (should be updated to zero if no jobs in the queue)
+        self.user_comp_tickets = dict() #dict of compensation tickets each user holds
+
+    def compute_winner(self) -> str:
+        tickets = []
+        
+        for user in self.user_jobs.keys():
+            if self.user_jobs[user] > 0:
+                tickets += [user] * (self.user_tickets[user] + self.user_comp_tickets[user])
+        
+        winner = random.choice(tickets)
+        
+        if global_.qFlag:
+            print("current winner : ", winner)
+            print("number of jobs in the queue of user ", winner, self.user_jobs[winner])
+        return winner
+
+    def update_comp_ticket(self, pod: Pod) -> None: #this is called in the simulator when preempting a job
+        if self.quantum > pod.remainWork: #double-checking the condition
+            remainder = self.quantum - pod.remainWork
+            self.user_comp_tickets[pod.user] += self.quantum / remainder
+        
+    def addToQueue(self, pod: Pod) -> None:
+        if pod.user not in self.user_jobs.keys() or self.user_tickets[pod.user] == 0:
+            #assign tickets
+            self.user_jobs[pod.user] = 1
+            self.user_tickets[pod.user] = pod.tickets
+            self.user_comp_tickets[pod.user] = 0
+        else:
+            self.user_jobs[pod.user] += 1
+        
+        self.podQueue.append(pod)
+
+    def schedulePods(self, myNodeList: NodeList) -> Tuple[list[Pod],list[Pod]]:
+        if len(self.podQueue) == 0:
+            return [], []
+
+        scheduledPods = []
+        preemptedPods = []
+        notScheduledPods = []
+        currentTime = self.podQueue[0].stateTS
+        while len(self.podQueue) > 0 and self.podQueue[0].stateTS == currentTime: # Try to schedule all the pods of current time
+            
+            target_user = self.compute_winner()
+            
+            self.user_comp_tickets[target_user] = 0 #use up comp tickets for the winner
+
+            currPod = None
+            for idx, pod in enumerate(self.podQueue): #find the first job added from the winner
+                if pod.user == target_user:
+                    currPod = pod
+                    break
+            
+            assert currPod != None
+
+            del self.podQueue[idx]
+            self.user_jobs[currPod.user] -= 1
+
+            #if no longer in the queue, remove the user ticket
+            if self.user_jobs[currPod.user] == 0:
+                self.user_tickets[currPod.user] = 0
+
+            matchedNodes = myNodeList.getMatch(currPod, 1)
+            if len(matchedNodes) > 0: # At least one Node can run this pod
+                # Not sure how this going to work yet. TODO FIND A BETTER WAY TO PICK CHOSEN NODE
+                chosenNode = matchedNodes[0] # There is only one node here lol
+                if global_.qFlag:
+                    print("Matched Pod [%s] with Node [%s]" % (currPod.name, chosenNode.name))
+
+                chosenNode.addPod(currPod) # Take the resource now, so that no other nodes can take the resource
+                currPod.node = chosenNode # Link node to pod
+                scheduledPods.append(currPod)
+
+            else:
+                # No node can run this pod
+                if self.isPreemptive: # If preemptive, then try removing a pod
+                    preemptedPod = self.preemptPod(currPod)
+                    if preemptedPod != None:
+                        preemptedPods.append(preemptedPod)
+                        if global_.qFlag:
+                            print("Pod [%s] w/ Prio [%d] is preempted by Pod [%s] w/ Prio [%d]" \
+                                % (preemptedPod.name, preemptedPod.prio, currPod.name, currPod.prio))
+                    else:
+                        if global_.qFlag:
+                            print("Unable to Preempt Pods for Pod [%s]" % (currPod.name))
+                    # Put pod back into queue and wait ...
+                    notScheduledPods.append(currPod)
+                else: # Otherwise, put pod back into queue and wait ...
+                    notScheduledPods.append(currPod)
+                    if global_.qFlag:
+                        print("Unable to Match Pod [%s] with Nodes" % (currPod.name))
+    
+        while len(notScheduledPods) > 0:
+            self.addToQueue(notScheduledPods.pop())
+
+        return scheduledPods, preemptedPods
 
 # class OurNovelSolution(Scheduler):
 #     def __init__(self) -> None:
