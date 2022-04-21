@@ -225,6 +225,7 @@ def main(argv):
 
     # Start simulation
     simulate(myEventQueue, myScheduler, myNodeList)
+    myPodList.calcAllJct()
 
     print("Summary:")
     print("Pod File: %s\tNode File:%s" %(pfile, nfile))
