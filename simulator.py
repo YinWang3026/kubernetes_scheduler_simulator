@@ -233,6 +233,7 @@ def main(argv):
     print("Unable to schedule Pods: %s" % (myScheduler.getPodQueueStr()))
     print(myPodList.getPodsBenchmarkStr())
     print(myNodeList.getUsageLogs())
+    print(myNodeList.getClusterLog())
     
 def simulate(myEventQueue: EventQueue, myScheduler: Scheduler, myNodeList: NodeList) -> None:
     def printStateIntro(currentTime, proc, timeInPrevState, newState):
@@ -241,7 +242,7 @@ def simulate(myEventQueue: EventQueue, myScheduler: Scheduler, myNodeList: NodeL
                 % (currentTime, proc.name, timeInPrevState, proc.state, newState))
 
     event = myEventQueue.getEvent()
-
+    currentTime = -1
     if global_.tFlag:
         print("\n###################\nSimulation Start")
 
@@ -253,7 +254,7 @@ def simulate(myEventQueue: EventQueue, myScheduler: Scheduler, myNodeList: NodeL
         currentTime = event.timeStamp
         timeInPrevState = currentTime - pod.stateTS
         event = None # Disconnect pointer to object
-        myNodeList.setCurrentTime(currentTime)
+        myNodeList.updateClusterInfo(currentTime) # Sets current time and updates cluster usage
 
         if global_.tFlag:
             print(myScheduler.getRunPodStr())
@@ -347,6 +348,8 @@ def simulate(myEventQueue: EventQueue, myScheduler: Scheduler, myNodeList: NodeL
 
         # Get the next event
         event = myEventQueue.getEvent()
+    
+    myNodeList.updateClusterInfo(currentTime) # Sets current time and updates cluster usage
     
     if global_.tFlag:
         print("\nSimulation End\n####################################\n")
