@@ -22,9 +22,6 @@ class Node:
         self.currentTime = 0
         self.log = [] # Tuple of (start, end, pod.name, cpu, gpu, ram usage)
         self.admission = {} # Map tracking pod.name starting time on this node 
-
-        # Pods running on this node, not needed as self.admission can be used to track whats current on this Node
-        # self.podSet = set() # For O(1) remove and add, but can use other data struct if needed
     
     def addPod(self, pod: Pod) -> None:
         if global_.zFlag:
@@ -96,14 +93,34 @@ class Node:
 
 class NodeList:
     def __init__(self) -> None:
+        # Cluster node list
         self.nodes = []
 
+        # Basic info, does not change
+        self.totalCpu = 0
+        self.totalGpu = 0
+        self.totalRam = 0
+
+        # Log 
+        # Maps (currentTime) -> (cpu usage, gpu usage, ram usage)
+        self.log = {} 
+
     def addNode(self, node: Node) -> None:
+        self.totalCpu += node.cpu
+        self.totalGpu += node.gpu
+        self.totalRam += node.ram
         self.nodes.append(node)
     
-    def setCurrentTime(self, currentTime: int) -> None:
+    def updateClusterInfo(self, currentTime: int) -> None:
+        cpuUsed = 0
+        gpuUsed = 0
+        ramUsed = 0
         for i in self.nodes:
             i.currentTime = currentTime
+            cpuUsed += (i.cpu - i.curCpu)
+            gpuUsed += (i.gpu - i.curGpu)
+            ramUsed += (i.ram - i.curRam)
+        self.log[currentTime] = (cpuUsed, gpuUsed, ramUsed)
 
     def getMatch(self, pod: Pod, k: int) -> list[Node]:
         # Return a list of nodes that can run the given pod
@@ -126,12 +143,25 @@ class NodeList:
         s = "Node List:\n"
         for i in self.nodes:
             s += "\t" + i.__repr__() + "\n"
+        s += "\tTotal CPU: %d\n" % (self.totalCpu)
+        s += "\tTotal GPU: %d\n" % (self.totalGpu)
+        s += "\tTotal RAM: %d\n" % (self.totalRam)
         return s
 
     def getUsageLogs(self) -> str:
-        s = "Usage Log: \n"
+        s = "Node Usage Log:\n"
         for i in self.nodes:
             s += "\t" + i.getUsageLogStr() + "\n"
+        return s
+    
+    def getClusterLog(self) -> str:
+        s = "Cluster Log:\n"
+        s += "time,cpuUsed,gpuUsed,ramUsed,cpuPercent,gpuPercent,ramPercent\n"
+        for time in sorted(self.log.keys()):
+            cpu, gpu, ram = self.log[time]
+            s += "%d,%d,%d,%d,%.2f,%.2f,%.2f\n" \
+            % (time, cpu, gpu, ram, cpu/self.totalCpu, gpu/self.totalGpu, ram/self.totalRam)
+        
         return s
 
 # Custom getMatch policies
