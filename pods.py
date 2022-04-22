@@ -36,7 +36,7 @@ class Pod:
         self.execStartTime = -1
         self.finishTime = 0
         self.totalWaitTime = 0
-    
+
     def __repr__(self) -> str:
         return "Name: %s, AT: %d, Work: %d, CPU: %d, GPU: %d, RAM: %d, PRIO: %d, Tickets: %d" \
             % (self.name, self.at, self.work, self.cpu, self.gpu, self.ram, self.prio, self.tickets)
