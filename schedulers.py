@@ -489,10 +489,6 @@ class DRF(Scheduler): # DRF
 
         return scheduledPods, preemptedPods
 
-    def __repr__(self) -> str:
-        return "Scheduler: DRF " + super().__repr__()
-
-
 class Lottery(Scheduler): # Random
     def __init__(self, preemptive: bool) -> None:
         super().__init__(name="Lottery", preemptive=preemptive)
@@ -601,6 +597,3 @@ class Lottery(Scheduler): # Random
 
 #     def addToQueue(self, pod: Pod) -> None:
 #         pass
-                
-#     def __repr__(self) -> str:
-#         return "Lottery" + super().__repr__()
