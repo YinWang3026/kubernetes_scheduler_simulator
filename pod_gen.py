@@ -1,18 +1,18 @@
 from random import randint
 from name_generator import iter_all_strings
 import sys
-import global_
 import random
 
 def main(argv):
     currentTime = 0
     gen = iter_all_strings()
     N = 5
+    num_users = 5
     outFile = argv[0] if len(argv) == 1 else "pods.txt"
 
     userNames = []
     userPriorities = dict()
-    for n in range(global_.num_users):
+    for _ in range(num_users):
         name = "User" + next(gen)
         userNames.append(name)
         userPriorities[name] = randint(1,10)

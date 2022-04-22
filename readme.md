@@ -408,3 +408,79 @@ Pod List Benchmarks:
 Usage Log:
         Node[NodeC] Usage Log: (0, 452, 'PodA', 12, 21, 60) (452, 904, 'PodD', 12, 21, 60) (904, 1356, 'PodC', 12, 21, 60) (1356, 1386, 'PodB', 12, 21, 60) (1386, 1838, 'PodH', 12, 21, 60) (1838, 2290, 'PodG', 12, 21, 60) (2290, 2742, 'PodF', 12, 21, 60) (2742, 3194, 'PodE', 12, 21, 60) (3194, 3676, 'PodB', 12, 21, 60)
 ```
+
+``` DRF
+Summary:
+Pod File: .\text\pods7.txt      Node File:.\text\nodes_premp.txt
+Scheduler: DRF Quantum: 10000, Maxprio: 4, Preemptive: False
+Unable to schedule Pods: SchedQ[2]: PodF PodH
+Pod List Benchmarks:
+        Name: PodF, ArrivalTime: 2, ExecStartTime: -1, FinishTime: 0, TotalWaitTime: 0
+        Name: PodG, ArrivalTime: 3, ExecStartTime: 11, FinishTime: 870, TotalWaitTime: 8
+        Name: PodH, ArrivalTime: 3, ExecStartTime: -1, FinishTime: 0, TotalWaitTime: 0
+        Name: PodI, ArrivalTime: 3, ExecStartTime: 1536, FinishTime: 2030, TotalWaitTime: 1533
+        Name: PodJ, ArrivalTime: 11, ExecStartTime: 11, FinishTime: 678, TotalWaitTime: 0
+        Name: PodK, ArrivalTime: 16, ExecStartTime: 16, FinishTime: 998, TotalWaitTime: 0
+        Name: PodL, ArrivalTime: 17, ExecStartTime: 678, FinishTime: 1536, TotalWaitTime: 661
+
+Usage Log:
+        Node[NodeC] Usage Log: (11, 678, 'PodJ', 4, 11, 80) (678, 1536, 'PodL', 3, 9, 50) (1536, 2030, 'PodI', 1, 18, 73)
+        Node[NodeD] Usage Log: (11, 870, 'PodG', 1, 4, 28) (16, 998, 'PodK', 8, 18, 37)
+```
+
+```DRF Preempt
+Summary:
+Pod File: .\text\pods7.txt      Node File:.\text\nodes_premp.txt
+Scheduler: DRF Quantum: 10000, Maxprio: 4, Preemptive: True
+Unable to schedule Pods: SchedQ[2]: PodF PodH
+Pod List Benchmarks:
+        Name: PodF, ArrivalTime: 2, ExecStartTime: -1, FinishTime: 0, TotalWaitTime: 0
+        Name: PodG, ArrivalTime: 3, ExecStartTime: 11, FinishTime: 2359, TotalWaitTime: 1497
+        Name: PodH, ArrivalTime: 3, ExecStartTime: -1, FinishTime: 0, TotalWaitTime: 0
+        Name: PodI, ArrivalTime: 3, ExecStartTime: 678, FinishTime: 1172, TotalWaitTime: 675
+        Name: PodJ, ArrivalTime: 11, ExecStartTime: 11, FinishTime: 678, TotalWaitTime: 0
+        Name: PodK, ArrivalTime: 16, ExecStartTime: 16, FinishTime: 998, TotalWaitTime: 0
+        Name: PodL, ArrivalTime: 17, ExecStartTime: 678, FinishTime: 1536, TotalWaitTime: 661
+
+Usage Log:
+        Node[NodeC] Usage Log: (11, 678, 'PodJ', 4, 11, 80) (678, 1172, 'PodI', 1, 18, 73) (1536, 2359, 'PodG', 1, 4, 28)
+        Node[NodeD] Usage Log: (11, 47, 'PodG', 1, 4, 28) (16, 998, 'PodK', 8, 18, 37) (678, 1536, 'PodL', 3, 9, 50)
+```
+
+``` Lottery
+Summary:
+Pod File: .\text\pods7.txt      Node File:.\text\nodes_premp.txt
+Scheduler: LotteryQuantum: 10000, Maxprio: 4, Preemptive: False
+Unable to schedule Pods: SchedQ[2]: PodF PodH
+Pod List Benchmarks:
+        Name: PodF, ArrivalTime: 2, ExecStartTime: -1, FinishTime: 0, TotalWaitTime: 0
+        Name: PodG, ArrivalTime: 3, ExecStartTime: 11, FinishTime: 870, TotalWaitTime: 8
+        Name: PodH, ArrivalTime: 3, ExecStartTime: -1, FinishTime: 0, TotalWaitTime: 0
+        Name: PodI, ArrivalTime: 3, ExecStartTime: 11, FinishTime: 505, TotalWaitTime: 8
+        Name: PodJ, ArrivalTime: 11, ExecStartTime: 998, FinishTime: 1665, TotalWaitTime: 987
+        Name: PodK, ArrivalTime: 16, ExecStartTime: 16, FinishTime: 998, TotalWaitTime: 0
+        Name: PodL, ArrivalTime: 17, ExecStartTime: 505, FinishTime: 1363, TotalWaitTime: 488
+
+Usage Log:
+        Node[NodeC] Usage Log: (11, 870, 'PodG', 1, 4, 28) (16, 998, 'PodK', 8, 18, 37) (998, 1665, 'PodJ', 4, 11, 80)
+        Node[NodeD] Usage Log: (11, 505, 'PodI', 1, 18, 73) (505, 1363, 'PodL', 3, 9, 50)
+```
+
+``` Lottery Preempt
+Summary:
+Pod File: .\text\pods7.txt      Node File:.\text\nodes_premp.txt
+Scheduler: LotteryQuantum: 10000, Maxprio: 4, Preemptive: True
+Unable to schedule Pods: SchedQ[2]: PodH PodF
+Pod List Benchmarks:
+        Name: PodF, ArrivalTime: 2, ExecStartTime: -1, FinishTime: 0, TotalWaitTime: 0
+        Name: PodG, ArrivalTime: 3, ExecStartTime: 11, FinishTime: 1821, TotalWaitTime: 959
+        Name: PodH, ArrivalTime: 3, ExecStartTime: -1, FinishTime: 0, TotalWaitTime: 0
+        Name: PodI, ArrivalTime: 3, ExecStartTime: 11, FinishTime: 2030, TotalWaitTime: 1533
+        Name: PodJ, ArrivalTime: 11, ExecStartTime: 904, FinishTime: 1571, TotalWaitTime: 893
+        Name: PodK, ArrivalTime: 16, ExecStartTime: 16, FinishTime: 998, TotalWaitTime: 0
+        Name: PodL, ArrivalTime: 17, ExecStartTime: 46, FinishTime: 904, TotalWaitTime: 29
+
+Usage Log:
+        Node[NodeC] Usage Log: (11, 47, 'PodG', 1, 4, 28) (16, 998, 'PodK', 8, 18, 37) (998, 1821, 'PodG', 1, 4, 28)
+        Node[NodeD] Usage Log: (11, 46, 'PodI', 1, 18, 73) (46, 904, 'PodL', 3, 9, 50) (904, 1571, 'PodJ', 4, 11, 80) (1571, 2030, 'PodI', 1, 18, 73)
+```
