@@ -121,6 +121,8 @@ def parseSchedulerInfo(arg: str) -> Scheduler:
         myScheduler = DRF(preemptive=preemptive)
     elif arg[0] == "Lottery":
         myScheduler = Lottery(preemptive=preemptive)
+    elif arg[0] == "Vergil":
+        myScheduler = Vergil()
 
     return myScheduler
 
