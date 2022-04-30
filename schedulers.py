@@ -540,11 +540,8 @@ class Lottery(Scheduler): # Random
         scheduledPods = []
         preemptedPods = []
         notScheduledPods = []
-        currentTime = self.podQueue[0].stateTS
-        while len(self.podQueue) > 0 and self.podQueue[0].stateTS == currentTime: # Try to schedule all the pods of current time
-            
+        while True: # Try to schedule all the pods of current time
             target_user = self.compute_winner()
-            
             self.user_comp_tickets[target_user] = 0 #use up comp tickets for the winner
 
             currPod = None
@@ -553,7 +550,8 @@ class Lottery(Scheduler): # Random
                     currPod = pod
                     break
             
-            assert currPod != None
+            if currPod == None:
+                break
 
             del self.podQueue[idx]
             self.user_jobs[currPod.user] -= 1
