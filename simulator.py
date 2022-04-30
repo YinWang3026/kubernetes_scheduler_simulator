@@ -122,7 +122,7 @@ def parseSchedulerInfo(arg: str) -> Scheduler:
     elif arg[0] == "Lottery":
         myScheduler = Lottery(preemptive=preemptive)
     elif arg[0] == "Vergil":
-        myScheduler = Vergil()
+        myScheduler = Vergil(maxprio=maxPrio)
 
     return myScheduler
 
