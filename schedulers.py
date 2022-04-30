@@ -498,23 +498,29 @@ class Lottery(Scheduler): # Random
         self.user_comp_tickets = dict() #dict of compensation tickets each user holds
 
     def compute_winner(self) -> str:
-        tickets = []
-        
+        totalTickets = 0
         for user in self.user_jobs.keys():
             if self.user_jobs[user] > 0:
-                tickets += [user] * (self.user_tickets[user] + self.user_comp_tickets[user])
+                totalTickets += (self.user_tickets[user] + self.user_comp_tickets[user])
         
-        winner = random.choice(tickets)
-        
+        winningTicket = random.randint(0, totalTickets)
+        currentTicket = 0
+        winner = None
+
+        for user in self.user_jobs.keys():
+            if self.user_jobs[user] > 0:
+                currentTicket += (self.user_tickets[user] + self.user_comp_tickets[user])
+                if currentTicket >= winningTicket:
+                    winner = user
+                    break
+
         if global_.qFlag:
             print("current winner : ", winner)
             print("number of jobs in the queue of user ", winner, self.user_jobs[winner])
         return winner
 
-    def update_comp_ticket(self, pod: Pod) -> None: #this is called in the simulator when preempting a job
-        if self.quantum > pod.remainWork: #double-checking the condition
-            remainder = self.quantum - pod.remainWork
-            self.user_comp_tickets[pod.user] += self.quantum / remainder
+    def update_comp_ticket(self, pod: Pod, remainder: int) -> None: #this is called in the simulator when preempting a job
+        self.user_comp_tickets[pod.user] += self.quantum / remainder
         
     def addToQueue(self, pod: Pod) -> None:
         if pod.user not in self.user_jobs.keys() or self.user_tickets[pod.user] == 0:

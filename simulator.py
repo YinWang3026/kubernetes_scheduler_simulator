@@ -283,8 +283,6 @@ def simulate(myEventQueue: EventQueue, myScheduler: Scheduler, myNodeList: NodeL
 
             if pod.remainWork > myScheduler.quantum: #Remaining time to run is greater than the quantum
                 # Create new event to preempt the proc after the quantum, put the proc to preempt
-                if myScheduler.name == "Lottery":
-                    myScheduler.update_comp_ticket(pod)
                 myEventQueue.putEvent(Event(currentTime+myScheduler.quantum, pod, Transition.TO_PREEMPT))
                 pod.remainWork -= myScheduler.quantum
 
@@ -344,6 +342,8 @@ def simulate(myEventQueue: EventQueue, myScheduler: Scheduler, myNodeList: NodeL
                 futureEvent = myEventQueue.getEventByPod(pod)
                 if futureEvent.timeStamp > (currentTime + 30):
                     remainingTime = futureEvent.timeStamp - (currentTime + 30)
+                    if myScheduler.name == "Lottery":
+                        myScheduler.update_comp_ticket(pod, remainingTime)
                     pod.remainWork += remainingTime # Restore the amount of work didn't get to do
                     myEventQueue.removeEvent(futureEvent)
                     futureEvent = None
