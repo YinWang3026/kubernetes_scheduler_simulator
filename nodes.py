@@ -231,9 +231,9 @@ class NodeListByBRA(NodeList): #BalancedResourceAllocation, always used with Lea
         self.nodes.append(node)
     
     def getBRAScore(self, pod:Pod, node:Node) -> float:
-        cpuFraction = pod.cpu / node.curCpu
-        gpuFraction = pod.gpu / node.curGpu
-        ramFraction = pod.ram / node.curRam
+        # cpuFraction = pod.cpu / node.curCpu
+        # gpuFraction = pod.gpu / node.curGpu
+        # ramFraction = pod.ram / node.curRam
 
         distance = sqrt((node.curCpu-pod.cpu)**2 + (node.curGpu-pod.cpu)**2 + (node.curRam-pod.ram)**2)
         bra_score = 10 - distance*10

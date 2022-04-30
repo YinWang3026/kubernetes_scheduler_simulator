@@ -154,6 +154,8 @@ def main(argv):
                 myNodeList = NodeListByLRP()
             elif arg == "BRA":
                 myNodeList = NodeListByBRA()
+            else:
+                myNodeList = None
         elif opt in ("-v"):
             global_.vFlag = True
         elif opt in ("-t"):
