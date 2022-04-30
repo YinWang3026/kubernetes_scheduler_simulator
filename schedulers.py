@@ -520,7 +520,7 @@ class Lottery(Scheduler): # Random
         return winner
 
     def update_comp_ticket(self, pod: Pod, remainder: int) -> None: #this is called in the simulator when preempting a job
-        self.user_comp_tickets[pod.user] += self.quantum / remainder
+        self.user_comp_tickets[pod.user] += int(self.quantum / remainder) + 1
         
     def addToQueue(self, pod: Pod) -> None:
         if pod.user not in self.user_jobs.keys() or self.user_tickets[pod.user] == 0:
@@ -560,10 +560,9 @@ class Lottery(Scheduler): # Random
             if self.user_jobs[currPod.user] == 0:
                 self.user_tickets[currPod.user] = 0
 
-            matchedNodes = myNodeList.getMatch(currPod, 1)
+            matchedNodes = myNodeList.getMatch(currPod, 8)
             if len(matchedNodes) > 0: # At least one Node can run this pod
-                # Not sure how this going to work yet. TODO FIND A BETTER WAY TO PICK CHOSEN NODE
-                chosenNode = matchedNodes[0] # There is only one node here lol
+                chosenNode = random.choice(matchedNodes)
                 if global_.qFlag:
                     print("Matched Pod [%s] with Node [%s]" % (currPod.name, chosenNode.name))
 
