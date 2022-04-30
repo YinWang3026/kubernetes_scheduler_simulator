@@ -44,27 +44,40 @@ class Pod:
         self.jct = (self.work + self.totalWaitTime) / self.work
     
     def __repr__(self) -> str:
-        return "Name: %s, AT: %d, Work: %d, CPU: %d, GPU: %d, RAM: %d, PRIO: %d, Tickets: %d" \
-            % (self.name, self.at, self.work, self.cpu, self.gpu, self.ram, self.prio, self.tickets)
+        return "Name: %s, AT: %d, Work: %d, CPU: %d, GPU: %d, RAM: %d, PRIO: %d, Tickets: %d"\
+            + "\n\tExecStartTime: %d, FinishTime: %d, TotalWaitTime: %d, JCT: %.2f"\
+            % (self.name, self.at, self.work, self.cpu, self.gpu, self.ram, self.prio, self.tickets,\
+                self.execStartTime, self.finishTime, self.totalWaitTime, self.jct)
     
     def getStateInfoStr(self) -> str:
         return "Name: %s, State: %s, StateTS: %d" % (self.name, self.state.name, self.stateTS)
     
-    def getBenchmarkStr(self) -> str:
-        return "Name: %s, ArrivalTime: %d, ExecStartTime: %d, FinishTime: %d, TotalWaitTime: %d, JCT: %.2f" \
-            % (self.name, self.at, self.execStartTime, self.finishTime, self.totalWaitTime, self.jct)
+    # def getBenchmarkStr(self) -> str:
+    #     return "Name: %s, ArrivalTime: %d, ExecStartTime: %d, FinishTime: %d, TotalWaitTime: %d, JCT: %.2f" \
+    #         % (self.name, self.at, self.execStartTime, self.finishTime, self.totalWaitTime, self.jct)
 
 class PodList:
     def __init__(self) -> None:
         self.pods = []
         self.avgJct = -1.00
+        self.avgLatency = -1.00
     
-    def calcAllJct(self) -> None:
+    def calcAvgJct(self) -> None:
         totalJct = 0
         for pod in self.pods:
             pod.calcJct()
             totalJct += pod.jct
         self.avgJct = totalJct / len(self.pods)
+    
+    def calcAvgLatency(self) -> None:
+        totalLat = 0
+        totalPods = 0
+        for pod in self.pods:
+            if pod.execStartTime != -1:
+                totalLat += pod.execStartTime
+                totalPods += 1
+        if totalPods != 0:
+            self.avgLatency = totalLat / totalPods
 
     def addPod(self, pod: Pod) -> None:
         self.pods.append(pod)
@@ -75,9 +88,8 @@ class PodList:
             s += "\t" + i.__repr__() + "\n"
         return s
     
-    def getPodsBenchmarkStr(self) -> str:
+    def getBenchmarkStr(self) -> str:
         s = "Pod Benchmarks:\n"
-        for i in self.pods:
-            s += "\t" + i.getBenchmarkStr() + "\n"
         s += "\tAverage JCT: %.2f" % (self.avgJct)
+        s += "\tAverage Latency: %.2f" % (self.avgLatency)
         return s
