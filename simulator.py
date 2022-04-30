@@ -225,13 +225,14 @@ def main(argv):
 
     # Start simulation
     simulate(myEventQueue, myScheduler, myNodeList)
-    myPodList.calcAllJct()
+    myPodList.calcAvgJct()
+    myPodList.calcAvgLatency()
 
     print("Summary:")
     print("Pod File: %s\tNode File:%s" %(pfile, nfile))
     print(myScheduler)
     print("Unable to schedule Pods: %s" % (myScheduler.getPodQueueStr()))
-    print(myPodList.getPodsBenchmarkStr())
+    print(myPodList.getBenchmarkStr())
     print(myNodeList.getUsageLogs())
     print(myNodeList.getClusterLog())
     
