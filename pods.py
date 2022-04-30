@@ -45,7 +45,7 @@ class Pod:
     
     def __repr__(self) -> str:
         return "Name: %s, AT: %d, Work: %d, CPU: %d, GPU: %d, RAM: %d, PRIO: %d, Tickets: %d"\
-            + "\n\tExecStartTime: %d, FinishTime: %d, TotalWaitTime: %d, JCT: %.2f"\
+                "\n\tExecStartTime: %d, FinishTime: %d, TotalWaitTime: %d, JCT: %.2f"\
             % (self.name, self.at, self.work, self.cpu, self.gpu, self.ram, self.prio, self.tickets,\
                 self.execStartTime, self.finishTime, self.totalWaitTime, self.jct)
     

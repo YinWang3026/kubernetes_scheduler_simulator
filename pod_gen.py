@@ -26,7 +26,7 @@ def main(argv):
     genPodNames = iter_all_strings()
     # currentTime = 0
     with open(outFile, 'w') as f:
-        f.write("UserName podName arrivalTime work prio tickets cpu gpu ram tickets\n")
+        f.write("UserName podName arrivalTime work prio tickets cpu gpu ram\n")
         for i in range(0, N):
             if i != 0:
                 f.write("\n")
