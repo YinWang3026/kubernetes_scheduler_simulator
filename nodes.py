@@ -101,6 +101,11 @@ class NodeList:
         self.totalGpu = 0
         self.totalRam = 0
 
+        # Per second
+        self.cpuPerSec = -1.00
+        self.ramPerSec = -1.00
+        self.gpuPerSec = -1.00
+
         # Log 
         # Maps (currentTime) -> (cpu usage, gpu usage, ram usage)
         self.log = {} 
@@ -121,6 +126,21 @@ class NodeList:
             gpuUsed += (i.gpu - i.curGpu)
             ramUsed += (i.ram - i.curRam)
         self.log[currentTime] = (cpuUsed, gpuUsed, ramUsed)
+
+    def calcAvgUtil(self):
+        startTime = min(self.log.keys())
+        endTime = max(self.log.keys())
+        cpuUsed = 0
+        gpuUsed = 0
+        ramUsed = 0
+        for cpu, gpu, ram in self.log.values():
+            cpuUsed += cpu
+            gpuUsed += gpu
+            ramUsed += ram
+        
+        self.cpuPerSec = cpuUsed / (endTime - startTime)
+        self.gpuPerSec = gpuUsed / (endTime - startTime)
+        self.ramPerSec = ramUsed / (endTime - startTime)
 
     def getMatch(self, pod: Pod, k: int) -> list[Node]:
         # Return a list of nodes that can run the given pod
@@ -168,6 +188,13 @@ class NodeList:
             s += "%d,%d,%d,%d,%.2f,%.2f,%.2f\n" \
             % (time, cpu, gpu, ram, cpu/self.totalCpu, gpu/self.totalGpu, ram/self.totalRam)
         
+        return s
+
+    def getAvgUtil(self) -> str:
+        s = "Average Util:\n"
+        s += "\tAverage CPU Per Sec: %.2f" % (self.cpuPerSec)
+        s += "\tAverage GPU Per Sec: %.2f" % (self.gpuPerSec)
+        s += "\tAverage RAM Per Sec: %.2f" % (self.ramPerSec)
         return s
 
 class NodeListByLRP(NodeList): #LeastRequestedPriority
