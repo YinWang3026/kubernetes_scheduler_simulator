@@ -126,18 +126,24 @@ class NodeList:
         # Return a list of nodes that can run the given pod
         # Can use derived class and a custom policy
         # Default policy, return the first n nodes that has enough resource to run this pod
-        matchedNodes = []
-        count = 0
-        if global_.zFlag:
-            print("Matching Pod [%s] with nodes" % (pod.name))
+        
+        # Finds at most top k closest (in terms of resource) node to the pod
+        potentialMatches = [] # Max heap
+
         for i in self.nodes:
             if i.curCpu >= pod.cpu and i.curGpu >= pod.gpu and i.curRam >= pod.ram:
-                matchedNodes.append(i)
-                count += 1
-                if count == k:
-                    break
+                distance = sqrt((i.curCpu-pod.cpu)**2 + (i.curGpu-pod.cpu)**2 + (i.curRam-pod.ram)**2)
+                heapq.heappush(potentialMatches, (-distance, i))
+                if len(potentialMatches) > k:
+                    # Remove the largest distance node
+                    heapq.heappop(potentialMatches)
         
-        return matchedNodes
+        matchedNodes = []
+        while len(potentialMatches) > 0:
+            matchedNodes.append(heapq.heappop(potentialMatches)[1])
+        
+        # Reverse list so that it is sorted from smallest distance to largest distance
+        return matchedNodes[::-1]
 
     def __repr__(self) -> str:
         s = "Node List:\n"
@@ -163,30 +169,6 @@ class NodeList:
             % (time, cpu, gpu, ram, cpu/self.totalCpu, gpu/self.totalGpu, ram/self.totalRam)
         
         return s
-
-# Custom getMatch policies
-class NodeListByDistance(NodeList):
-    def __init__(self) -> None:
-        super().__init__()
-    
-    def getMatch(self, pod: Pod, k: int) -> list[Node]:
-        # Finds at most top k closest (in terms of resource) node to the pod
-        potentialMatches = [] # Max heap
-
-        for i in self.nodes:
-            if i.curCpu >= pod.cpu and i.curGpu >= pod.gpu and i.curRam >= pod.ram:
-                distance = sqrt((i.curCpu-pod.cpu)**2 + (i.curGpu-pod.cpu)**2 + (i.curRam-pod.ram)**2)
-                heapq.heappush(potentialMatches, (-distance, i))
-                if len(potentialMatches) > k:
-                    # Remove the largest distance node
-                    heapq.heappop(potentialMatches)
-        
-        matchedNodes = []
-        while len(potentialMatches) > 0:
-            matchedNodes.append(heapq.heappop(potentialMatches)[1])
-        
-        # Reverse list so that it is sorted from smallest distance to largest distance
-        return matchedNodes[::-1]
 
 class NodeListByLRP(NodeList): #LeastRequestedPriority
     def __init__(self) -> None:

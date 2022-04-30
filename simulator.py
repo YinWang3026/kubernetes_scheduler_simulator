@@ -150,9 +150,7 @@ def main(argv):
         elif opt in ("-s", "--sched"):
             myScheduler = parseSchedulerInfo(arg)
         elif opt in ("-d", "--nsched"):
-            if arg == "topK":
-                myNodeList = NodeListByDistance()
-            elif arg == "LRP":
+            if arg == "LRP":
                 myNodeList = NodeListByLRP()
             elif arg == "BRA":
                 myNodeList = NodeListByBRA()
