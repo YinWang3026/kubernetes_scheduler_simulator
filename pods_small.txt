@@ -1,4 +1,4 @@
-UserName podName arrivalTime work prio tickets cpu gpu ram tickets
+UserName podName arrivalTime work prio tickets cpu gpu ram
 UserO PodA 62 524 2 80 2 2 6
 UserM PodB 4 304 3 80 5 1 4
 UserAN PodC 11 598 1 30 4 1 14
