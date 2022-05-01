@@ -41,7 +41,7 @@ class Scheduler:
     def addToRunList(self, pod: Pod) -> None:
         index = 0
         while index < len(self.runningPods):
-            if self.runningPods[index].dynamicPrio < pod.dynamicPrio:
+            if self.runningPods[index].prio < pod.prio:
                 break
             index += 1
         self.runningPods.insert(index, pod)
@@ -50,7 +50,7 @@ class Scheduler:
         if len(self.runningPods) == 0:
             return None
         for currPod in self.runningPods:
-            if currPod.dynamicPrio < highPrioPod.dynamicPrio \
+            if currPod.prio < highPrioPod.prio \
                 and currPod.cpu + currPod.node.curCpu >= highPrioPod.cpu \
                 and currPod.gpu + currPod.node.curGpu >= highPrioPod.gpu \
                 and currPod.ram + currPod.node.curRam >= highPrioPod.ram \
@@ -114,10 +114,9 @@ class FCFS(Scheduler): # First Come First Served
         while len(self.podQueue) > 0 and self.podQueue[0].stateTS == currentTime:
             # Try to schedule all the pods of current time
             currPod = self.podQueue.popleft()
-            matchedNodes = myNodeList.getMatch(currPod, 1)
+            matchedNodes = myNodeList.getMatch(currPod, 8)
             if len(matchedNodes) > 0: # At least one Node can run this pod
-                # Not sure how this going to work yet. TODO FIND A BETTER WAY TO PICK CHOSEN NODE
-                chosenNode = matchedNodes[0] # There is only one node here lol
+                chosenNode = random.choice(matchedNodes)
                 if global_.qFlag:
                     print("Matched Pod [%s] with Node [%s]" % (currPod.name, chosenNode.name))
 
@@ -351,10 +350,9 @@ class PRIO(Scheduler): # Priority scheduling
 
             # Find a matching pod
             if currPod != None:
-                matchedNodes = myNodeList.getMatch(currPod, 1)
+                matchedNodes = myNodeList.getMatch(currPod, 8)
                 if len(matchedNodes) > 0: # At least one Node can run this pod
-                    # Not sure how this going to work yet. TODO FIND A BETTER WAY TO PICK CHOSEN NODE
-                    chosenNode = matchedNodes[0] # There is only one node here lol
+                    chosenNode = random.choice(matchedNodes)
                     if global_.qFlag:
                         print("Matched Pod [%s] with Node [%s]" % (currPod.name, chosenNode.name))
 
@@ -591,9 +589,28 @@ class Lottery(Scheduler): # Random
 
         return scheduledPods, preemptedPods
 
-# class OurNovelSolution(Scheduler):
-#     def __init__(self) -> None:
-#         self.queue = deque()
+class Vergil(PRIO): # First Come First Served
+    def __init__(self, maxprio: int) -> None:
+        # Fixed preemptive - Increases system utilization
+        # Quantum - Reduces avg latency
+        super().__init__(preemptive=True, quantum=50, maxprio=maxprio)
+        self.name = "Vergil"
 
-#     def addToQueue(self, pod: Pod) -> None:
-#         pass
+        # PRIO lowers JCT
+        # FCFS is super fast to compute
+        # SRTF Minimizes JCT, so sort each queue by remaining time
+
+    def addToQueue(self, pod: Pod) -> None:
+        def insertPod(podQueue: deque, pod: Pod):
+            index = 0
+            while index < len(podQueue):
+                if pod.remainWork <= podQueue[index].remainWork:
+                    break
+                index += 1
+            podQueue.insert(index, pod)
+
+        if pod.dynamicPrio == -1: #when dynamic priority reaches -1, add to the expire queue
+            pod.dynamicPrio = pod.prio             
+            insertPod(self.expireQ[pod.dynamicPrio-1], pod)
+        else: #add to active queue
+            insertPod(self.activeQ[pod.dynamicPrio-1], pod)
